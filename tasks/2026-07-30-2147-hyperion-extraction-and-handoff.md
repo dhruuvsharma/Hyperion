@@ -64,6 +64,9 @@ cluster recommendations, produce a detailed Word/PDF engineering handbook, verif
   vLLM executable; the other four demonstrated that POSIX may immediately recycle an inode after
   unlink/recreate, defeating cleanup code that retained only `(st_dev, st_ino)` after closing its
   final descriptor.
+- The replacement run (`30586966703`) passed all Linux tests, then exposed an undeclared Ruff-policy
+  dependency when newly released Ruff 0.16.1 expanded the effective rule set. The project now states
+  its intended `E4`, `E7`, `E9`, and `F` lint baseline explicitly instead of inheriting tool defaults.
 
 ## Diff summary
 - Created the private `dhruuvsharma/Hyperion` repository and independent `Hyperion.slnx`; pinned the
@@ -80,6 +83,8 @@ cluster recommendations, produce a detailed Word/PDF engineering handbook, verif
   rejection. Added descriptor-backed POSIX ownership guards to all audited file-publication, lock,
   and training-directory cleanup paths, plus direct unlink/recreate regression coverage. Windows
   delete/rename behavior remains unchanged.
+- Made the Ruff lint contract explicit in `tools/hyperion-model/pyproject.toml` so CI does not change
+  policy merely because the hosted runner resolves a newer Ruff release.
 
 ## Verification
 - `dotnet build Hyperion.slnx --no-restore`: passed with 0 warnings and 0 errors.
@@ -95,9 +100,11 @@ cluster recommendations, produce a detailed Word/PDF engineering handbook, verif
   The earlier compileall, all 113 Draft 2020-12 schemas, 2,029
   references, and 87 CLI help surfaces remain green. The host is Windows/Python 3.12.6, not the
   sealed training runtime.
+- The explicit lint baseline passes under both local Ruff 0.15.11 and hosted-version Ruff 0.16.1;
+  both formatter checks also pass without rewriting any source.
 - Hosted run `30584887558` completed with its .NET build, 537 tests, and scoped formatter green; its
   failed Python job supplied the Linux portability evidence above. A fresh hosted run on the pushed
-  hardening commit is the final publication gate and will be recorded in the repository issue.
+  closure commits is the final publication gate and will be recorded in the repository issue.
 - Verifier container build passed from digest-pinned bases as `hyperion-verifier:closure`; the final
   manifest-list digest was `sha256:3c4b925818db94661241918ac9e0eccd0f2121d2a39374d6e2030ae0f0bae21e`.
 - The handbook is a tagged 40-page Letter PDF with embedded subset fonts. DOCX heading, table geometry,

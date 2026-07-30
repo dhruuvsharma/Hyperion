@@ -33,6 +33,9 @@ hyperion = "vibe_quant_model.cli:main"
 hyperion-model = "vibe_quant_model.cli:main"
 vibe-quant-model = "vibe_quant_model.cli:main"
 
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["vibe_quant_model*"]
