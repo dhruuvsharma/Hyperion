@@ -125,6 +125,28 @@ def _decode(value: str) -> bytes:
     return urlsafe_b64decode(value + "=" * (-len(value) % 4))
 
 
+class BaseSelectionPublicationRaceTests(unittest.TestCase):
+    def test_failed_installed_validation_preserves_unlinked_replacement(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary) / "selection.json"
+            replacement = b"concurrent replacement owner\n"
+
+            def replace_then_fail(path: Path):
+                path.unlink()
+                path.write_bytes(replacement)
+                raise ValidationError("forced raced final validation failure")
+
+            with self.assertRaisesRegex(ValidationError, "forced raced"):
+                base_selection_module._write_no_clobber(
+                    destination,
+                    b"owned selection\n",
+                    prepublish_validator=lambda path: path,
+                    installed_validator=replace_then_fail,
+                )
+
+            self.assertEqual(replacement, destination.read_bytes())
+
+
 class BaseModelSelectionTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()

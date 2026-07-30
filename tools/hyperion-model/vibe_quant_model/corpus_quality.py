@@ -2071,6 +2071,7 @@ def _write_no_clobber(
     installed = False
     installed_identity: tuple[int, int] | None = None
     residual_staging: Path | None = None
+    identity_guard: int | None = None
     try:
         descriptor, name = tempfile.mkstemp(
             prefix=f".{destination.name}.", suffix=".staging", dir=parent
@@ -2080,6 +2081,10 @@ def _write_no_clobber(
             stream.write(raw)
             stream.flush()
             os.fsync(stream.fileno())
+            if os.name == "posix":
+                # Keep the inode allocated after an unlink so a raced replacement
+                # cannot recycle the same (device, inode) before cleanup checks it.
+                identity_guard = os.dup(stream.fileno())
         prepublish_validator(staged)
         staged_stat = staged.lstat()
         installed_identity = (staged_stat.st_dev, staged_stat.st_ino)
@@ -2164,18 +2169,22 @@ def _write_no_clobber(
                 ) from cleanup_error
         raise
     finally:
-        if staged is not None:
-            try:
-                staged.unlink()
-            except FileNotFoundError:
-                pass
-            except OSError as error:
-                if not published:
-                    raise ValidationError(
-                        f"{field}: publication failed and staging cleanup failed; "
-                        "residual material requires removal: "
-                        f"{staged}"
-                    ) from error
+        try:
+            if staged is not None:
+                try:
+                    staged.unlink()
+                except FileNotFoundError:
+                    pass
+                except OSError as error:
+                    if not published:
+                        raise ValidationError(
+                            f"{field}: publication failed and staging cleanup failed; "
+                            "residual material requires removal: "
+                            f"{staged}"
+                        ) from error
+        finally:
+            if identity_guard is not None:
+                os.close(identity_guard)
 
 
 def create_training_corpus_admission(

@@ -59,6 +59,11 @@ cluster recommendations, produce a detailed Word/PDF engineering handbook, verif
   and deployment quantisation remain ablation research rather than QLoRA features.
 - Kimi K3 weights use a custom licence, not a standard permissive/OSI licence. Commercial thresholds,
   attribution, and current licence text require legal review before any use.
+- The first hosted CI run (`30584887558`) passed the complete Windows/.NET job but exposed five
+  Linux-only Python failures. One test incorrectly supplied a host-managed symlink as the attested
+  vLLM executable; the other four demonstrated that POSIX may immediately recycle an inode after
+  unlink/recreate, defeating cleanup code that retained only `(st_dev, st_ino)` after closing its
+  final descriptor.
 
 ## Diff summary
 - Created the private `dhruuvsharma/Hyperion` repository and independent `Hyperion.slnx`; pinned the
@@ -71,6 +76,10 @@ cluster recommendations, produce a detailed Word/PDF engineering handbook, verif
 - Added CI, provenance, operator/research documentation, a pinned primary-source Kimi K3 review, five
   native diagrams, and the 22-section engineering handbook in Markdown, Word, and PDF.
 - Added the reproducible handbook builder at `tools/docs/build_hyperion_handbook.py`.
+- Canonicalized the trusted Python executable fixture without weakening production symlink/reparse
+  rejection. Added descriptor-backed POSIX ownership guards to all audited file-publication, lock,
+  and training-directory cleanup paths, plus direct unlink/recreate regression coverage. Windows
+  delete/rename behavior remains unchanged.
 
 ## Verification
 - `dotnet build Hyperion.slnx --no-restore`: passed with 0 warnings and 0 errors.
@@ -79,9 +88,16 @@ cluster recommendations, produce a detailed Word/PDF engineering handbook, verif
 - Final formatter repair was limited to three extracted root files; the final root/Platform check
   `dotnet format Hyperion.slnx --verify-no-changes --no-restore --exclude public` passes. The full
   command still reports pre-existing formatting in 11 files inside the pinned read-only submodule.
-- Full Python closure: 492 passed, 0 failed, 3 expected Windows symlink-capability skips; Ruff check
-  and format, compileall, all 113 Draft 2020-12 schemas, 2,029 references, and 87 CLI help surfaces
-  passed. The host is Windows/Python 3.12.6, not the sealed training runtime.
+- Final full Python closure after portability hardening: 494 passed, 0 failed, and 5 expected Windows
+  POSIX/symlink-capability skips. Focused stable-tree modules passed 123/123 and 58/58; the Linux
+  harness passed 34/34, six direct file-publication regressions passed on Windows and Linux, and
+  three POSIX lock/directory regressions passed on Linux. Ruff check/format and diff checks passed.
+  The earlier compileall, all 113 Draft 2020-12 schemas, 2,029
+  references, and 87 CLI help surfaces remain green. The host is Windows/Python 3.12.6, not the
+  sealed training runtime.
+- Hosted run `30584887558` completed with its .NET build, 537 tests, and scoped formatter green; its
+  failed Python job supplied the Linux portability evidence above. A fresh hosted run on the pushed
+  hardening commit is the final publication gate and will be recorded in the repository issue.
 - Verifier container build passed from digest-pinned bases as `hyperion-verifier:closure`; the final
   manifest-list digest was `sha256:3c4b925818db94661241918ac9e0eccd0f2121d2a39374d6e2030ae0f0bae21e`.
 - The handbook is a tagged 40-page Letter PDF with embedded subset fonts. DOCX heading, table geometry,
@@ -100,3 +116,5 @@ cluster recommendations, produce a detailed Word/PDF engineering handbook, verif
 - Verifier evidence retains its documented limits: the caller selects image/entrypoint under signed
   authority, Docker daemon/runtime/kernel/builtin-seccomp state is not independently attested, and a
   privileged or same-user host retains narrow output path-swap power.
+- Descriptor guards prevent inode-reuse misidentification while an ownership decision is active;
+  they do not remove the documented same-user/privileged-host swap window after a completed check.

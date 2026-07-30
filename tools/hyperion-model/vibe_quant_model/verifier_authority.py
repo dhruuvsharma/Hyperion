@@ -2122,6 +2122,7 @@ def _write_no_clobber(
         _fail(field, f"already exists: {destination}")
     staged: Path | None = None
     owned_identity: tuple[int, int] | None = None
+    identity_guard: int | None = None
     try:
         descriptor, name = tempfile.mkstemp(
             prefix=f".{destination.name}.", suffix=".staging", dir=parent
@@ -2131,6 +2132,10 @@ def _write_no_clobber(
             stream.write(raw)
             stream.flush()
             os.fsync(stream.fileno())
+            if os.name == "posix":
+                # Retain the original inode across validation so a staging-path
+                # replacement cannot reuse its (device, inode) identity.
+                identity_guard = os.dup(stream.fileno())
         owned_identity = _file_identity(
             staged,
             f"{field} staging output",
@@ -2274,6 +2279,9 @@ def _write_no_clobber(
                 "require inspection: " + "; ".join(residuals)
             ) from error
         raise
+    finally:
+        if identity_guard is not None:
+            os.close(identity_guard)
 
 
 def finalize_csharp_verifier_authority(

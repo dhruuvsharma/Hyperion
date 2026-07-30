@@ -2305,6 +2305,7 @@ def _finalize_review_receipts_from_documents(
             "expert-model review-receipt output", "already exists; no file was replaced"
         )
     created_identity: tuple[int, int] | None = None
+    identity_guard: int | None = None
     try:
         with destination.open("xb") as stream:
             created_stat = os.fstat(stream.fileno())
@@ -2312,6 +2313,10 @@ def _finalize_review_receipts_from_documents(
             stream.write(output)
             stream.flush()
             os.fsync(stream.fileno())
+            if os.name == "posix":
+                # Prevent immediate inode reuse from making a raced replacement
+                # appear to be the file created by this publication attempt.
+                identity_guard = os.dup(stream.fileno())
         verified = validate_expert_model_review_receipts(
             destination,
             dataset_path=corpus.path,
@@ -2405,6 +2410,9 @@ def _finalize_review_receipts_from_documents(
             except OSError:
                 pass
         raise
+    finally:
+        if identity_guard is not None:
+            os.close(identity_guard)
 
 
 def prepare_expert_model_review_receipt_signing_bundle(
@@ -2514,6 +2522,7 @@ def prepare_expert_model_review_receipt_signing_bundle(
             "already exists; no file was replaced",
         )
     created_identity: tuple[int, int] | None = None
+    identity_guard: int | None = None
     try:
         with destination.open("xb") as stream:
             created_stat = os.fstat(stream.fileno())
@@ -2521,6 +2530,8 @@ def prepare_expert_model_review_receipt_signing_bundle(
             stream.write(output)
             stream.flush()
             os.fsync(stream.fileno())
+            if os.name == "posix":
+                identity_guard = os.dup(stream.fileno())
         resolved, captured, supplied = _read_canonical_json_document(
             destination,
             "review-receipt signing bundle",
@@ -2605,6 +2616,9 @@ def prepare_expert_model_review_receipt_signing_bundle(
             except OSError:
                 pass
         raise
+    finally:
+        if identity_guard is not None:
+            os.close(identity_guard)
 
 
 def finalize_expert_model_review_receipts(

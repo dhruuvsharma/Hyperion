@@ -269,16 +269,18 @@ class BaseEvaluationTests(unittest.TestCase):
             profile.execution_model_id,
         )
 
+        host_python = Path(sys.executable).resolve(strict=True)
         launch = build_base_evaluation_vllm_launch(
             profile_path=self.profile_path,
             snapshot_manifest_path=self.manifest,
             snapshot_path=self.snapshot,
             catalog_path=self.catalog,
             source_lock_path=self.source_lock,
-            executable_path=sys.executable,
+            executable_path=host_python,
             port=8000,
         )
         argv = launch["argv"]
+        self.assertEqual(os.fspath(host_python), argv[0])
         self.assertEqual(
             profile.execution_model_id, argv[argv.index("--served-model-name") + 1]
         )

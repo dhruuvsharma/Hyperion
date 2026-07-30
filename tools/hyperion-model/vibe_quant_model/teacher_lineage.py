@@ -2449,6 +2449,7 @@ def _write_no_clobber(
     published = False
     installed = False
     installed_identity: tuple[int, int] | None = None
+    identity_guard: int | None = None
     try:
         descriptor, name = tempfile.mkstemp(
             prefix=f".{destination.name}.", suffix=".staging", dir=parent
@@ -2458,6 +2459,10 @@ def _write_no_clobber(
             stream.write(raw)
             stream.flush()
             os.fsync(stream.fileno())
+            if os.name == "posix":
+                # Keep the original inode alive while the published path is
+                # validated so unlink/recreate cannot recycle its identity.
+                identity_guard = os.dup(stream.fileno())
         prepublish_validator(staged)
         staged_stat = staged.lstat()
         installed_identity = (staged_stat.st_dev, staged_stat.st_ino)
@@ -2531,18 +2536,22 @@ def _write_no_clobber(
                 ) from cleanup_error
         raise
     finally:
-        if staged is not None:
-            try:
-                staged.unlink()
-            except FileNotFoundError:
-                pass
-            except OSError as error:
-                if not published:
-                    raise ValidationError(
-                        f"{field}: publication failed and staging cleanup failed; "
-                        "residual material requires removal: "
-                        f"{staged}"
-                    ) from error
+        try:
+            if staged is not None:
+                try:
+                    staged.unlink()
+                except FileNotFoundError:
+                    pass
+                except OSError as error:
+                    if not published:
+                        raise ValidationError(
+                            f"{field}: publication failed and staging cleanup failed; "
+                            "residual material requires removal: "
+                            f"{staged}"
+                        ) from error
+        finally:
+            if identity_guard is not None:
+                os.close(identity_guard)
 
 
 def _validate_output_location(

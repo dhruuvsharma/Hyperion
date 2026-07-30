@@ -10,6 +10,7 @@ import platform
 import shutil
 import sys
 import tempfile
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
@@ -485,6 +486,48 @@ def _directory_identity(path: Path, field: str) -> tuple[int, int]:
     return stat.st_dev, stat.st_ino
 
 
+@dataclass
+class _DirectoryOwnership:
+    identity: tuple[int, int]
+    descriptor: int | None
+
+    def close(self) -> None:
+        descriptor = self.descriptor
+        self.descriptor = None
+        if descriptor is not None:
+            os.close(descriptor)
+
+
+def _capture_directory_ownership(path: Path, field: str) -> _DirectoryOwnership:
+    checked = _ensure_directory_no_reparse(path, field)
+    initial_identity = _directory_identity(checked, field)
+    if os.name == "nt":
+        return _DirectoryOwnership(initial_identity, None)
+
+    flags = os.O_RDONLY
+    flags |= getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_DIRECTORY", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(checked, flags)
+    except OSError as error:
+        raise ValidationError(
+            f"{field}: cannot open directory ownership guard: {error}"
+        ) from error
+    try:
+        descriptor_stat = os.fstat(descriptor)
+        descriptor_identity = descriptor_stat.st_dev, descriptor_stat.st_ino
+        if (
+            descriptor_identity != initial_identity
+            or _directory_identity(checked, field) != descriptor_identity
+        ):
+            raise ValidationError(f"{field}: path ownership changed while opening")
+        return _DirectoryOwnership(descriptor_identity, descriptor)
+    except BaseException:
+        os.close(descriptor)
+        raise
+
+
 def _publish_directory_no_clobber(
     source: Path,
     destination: Path,
@@ -494,8 +537,15 @@ def _publish_directory_no_clobber(
 ) -> Any:
     """Install one owned directory, replay it in place, and clean only our inode."""
 
-    source_identity = _directory_identity(source, f"{field} staging directory")
-    validator(source)
+    source_ownership = _capture_directory_ownership(
+        source, f"{field} staging directory"
+    )
+    source_identity = source_ownership.identity
+    try:
+        validator(source)
+    except BaseException:
+        source_ownership.close()
+        raise
     try:
         _install_directory_no_clobber(source, destination, field)
         if _directory_identity(destination, field) != source_identity:
@@ -542,47 +592,54 @@ def _publish_directory_no_clobber(
                 f"require inspection: {'; '.join(residuals)}"
             ) from error
         raise
+    finally:
+        source_ownership.close()
 
 
 def _cleanup_owned_stage(
     stage: Path,
-    stage_identity: tuple[int, int],
+    stage_ownership: _DirectoryOwnership,
     field: str,
     *,
-    protected_children: tuple[tuple[Path, tuple[int, int]], ...] = (),
+    protected_children: tuple[tuple[Path, _DirectoryOwnership], ...] = (),
 ) -> None:
-    if not os.path.lexists(stage):
-        return
-    residuals: list[str] = []
     try:
-        current_stage_identity = _directory_identity(stage, field)
-    except (OSError, ValidationError):
-        residuals.append(f"{stage} (ownership unavailable)")
-    else:
-        if current_stage_identity != stage_identity:
-            residuals.append(f"{stage} (raced replacement preserved)")
-    if not residuals:
-        for child, expected_identity in protected_children:
-            if not os.path.lexists(child):
-                continue
-            try:
-                current_identity = _directory_identity(child, f"{field} child")
-            except (OSError, ValidationError):
-                residuals.append(f"{child} (ownership unavailable)")
-            else:
-                if current_identity != expected_identity:
-                    residuals.append(f"{child} (raced replacement preserved)")
-    if residuals:
-        raise ValidationError(
-            f"{field}: cleanup withheld; residual paths require inspection: "
-            f"{'; '.join(residuals)}"
-        )
-    try:
-        shutil.rmtree(stage)
-    except OSError as error:
-        raise ValidationError(
-            f"{field}: cleanup failed; residual path requires removal: {stage}"
-        ) from error
+        if not os.path.lexists(stage):
+            return
+        residuals: list[str] = []
+        try:
+            current_stage_identity = _directory_identity(stage, field)
+        except (OSError, ValidationError):
+            residuals.append(f"{stage} (ownership unavailable)")
+        else:
+            if current_stage_identity != stage_ownership.identity:
+                residuals.append(f"{stage} (raced replacement preserved)")
+        if not residuals:
+            for child, child_ownership in protected_children:
+                if not os.path.lexists(child):
+                    continue
+                try:
+                    current_identity = _directory_identity(child, f"{field} child")
+                except (OSError, ValidationError):
+                    residuals.append(f"{child} (ownership unavailable)")
+                else:
+                    if current_identity != child_ownership.identity:
+                        residuals.append(f"{child} (raced replacement preserved)")
+        if residuals:
+            raise ValidationError(
+                f"{field}: cleanup withheld; residual paths require inspection: "
+                f"{'; '.join(residuals)}"
+            )
+        try:
+            shutil.rmtree(stage)
+        except OSError as error:
+            raise ValidationError(
+                f"{field}: cleanup failed; residual path requires removal: {stage}"
+            ) from error
+    finally:
+        for _, child_ownership in reversed(protected_children):
+            child_ownership.close()
+        stage_ownership.close()
 
 
 def _exact_pretty_json_bytes(value: Any) -> bytes:
@@ -1417,8 +1474,10 @@ def train_from_manifest(
                 dir=locked_output.parent,
             )
         )
-        stage_identity = _directory_identity(stage, "training staging directory")
-        staged_output_identity: tuple[int, int] | None = None
+        stage_ownership = _capture_directory_ownership(
+            stage, "training staging directory"
+        )
+        staged_output_ownership: _DirectoryOwnership | None = None
         try:
             private_inputs = stage / "private-inputs"
             private_inputs.mkdir()
@@ -1495,7 +1554,7 @@ def train_from_manifest(
 
             staged_output = stage / "artifact"
             staged_output.mkdir()
-            staged_output_identity = _directory_identity(
+            staged_output_ownership = _capture_directory_ownership(
                 staged_output, "training artifact staging directory"
             )
             _run_training(
@@ -1675,13 +1734,13 @@ def train_from_manifest(
                 )
         finally:
             protected_children = (
-                ((staged_output, staged_output_identity),)
-                if staged_output_identity is not None
+                ((staged_output, staged_output_ownership),)
+                if staged_output_ownership is not None
                 else ()
             )
             _cleanup_owned_stage(
                 stage,
-                stage_identity,
+                stage_ownership,
                 "training staging directory",
                 protected_children=protected_children,
             )
@@ -1829,10 +1888,10 @@ def finalize_training_artifact_from_handoff(
                 dir=locked_output.parent,
             )
         )
-        stage_identity = _directory_identity(
+        stage_ownership = _capture_directory_ownership(
             stage, "training finalization staging directory"
         )
-        staged_output_identity: tuple[int, int] | None = None
+        staged_output_ownership: _DirectoryOwnership | None = None
         try:
             staged_output = stage / "artifact"
             shutil.copytree(
@@ -1840,7 +1899,7 @@ def finalize_training_artifact_from_handoff(
                 staged_output,
                 symlinks=True,
             )
-            staged_output_identity = _directory_identity(
+            staged_output_ownership = _capture_directory_ownership(
                 staged_output, "training finalization artifact staging directory"
             )
             finalized = finalize_training_artifact_core(
@@ -1893,13 +1952,13 @@ def finalize_training_artifact_from_handoff(
             )
         finally:
             protected_children = (
-                ((staged_output, staged_output_identity),)
-                if staged_output_identity is not None
+                ((staged_output, staged_output_ownership),)
+                if staged_output_ownership is not None
                 else ()
             )
             _cleanup_owned_stage(
                 stage,
-                stage_identity,
+                stage_ownership,
                 "training finalization staging directory",
                 protected_children=protected_children,
             )

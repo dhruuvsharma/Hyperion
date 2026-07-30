@@ -68,6 +68,29 @@ SIGNER_ROLE = "independent-evaluation-author"
 P256_ORDER = int("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551", 16)
 
 
+class EvaluationAuthoringPublicationRaceTests(unittest.TestCase):
+    def test_failed_final_validation_preserves_unlinked_replacement(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary) / "authoring-approval.json"
+            replacement = b"concurrent replacement owner\n"
+
+            def replace_then_fail(path: Path):
+                if path.name.endswith(".staging"):
+                    return path
+                path.unlink()
+                path.write_bytes(replacement)
+                raise ValidationError("forced raced final validation failure")
+
+            with self.assertRaisesRegex(ValidationError, "forced raced"):
+                authoring_module._write_no_clobber(
+                    destination,
+                    b"owned authoring approval\n",
+                    prepublish_validator=replace_then_fail,
+                )
+
+            self.assertEqual(replacement, destination.read_bytes())
+
+
 def _rights() -> dict[str, bool]:
     return {
         "mayStore": True,

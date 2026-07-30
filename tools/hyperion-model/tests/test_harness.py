@@ -16,6 +16,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 import vibe_quant_model.cli as cli_module
+import vibe_quant_model.core as core_module
 import vibe_quant_model.training as training_module
 from vibe_quant_model.artifacts import (
     TRAINING_ARTIFACT_SCHEMA_VERSION,
@@ -343,6 +344,42 @@ class HarnessTests(unittest.TestCase):
                 lambda: expires,
             )
 
+    @unittest.skipUnless(os.name == "posix", "POSIX inode ownership regression")
+    def test_destination_lock_unlinks_owned_name_before_closing_inode(self) -> None:
+        destination = self.root / "locked-output"
+        lock_path = self.root / ".locked-output.lock"
+        real_close = core_module.os.close
+        real_lstat = core_module.os.lstat
+        original_stat: os.stat_result | None = None
+
+        def lstat_with_immediate_inode_reuse(path):
+            current_stat = real_lstat(path)
+            if original_stat is not None and Path(path) == lock_path:
+                try:
+                    marker = lock_path.read_text(encoding="utf-8")
+                except (FileNotFoundError, UnicodeDecodeError):
+                    pass
+                else:
+                    if marker == "replacement":
+                        return original_stat
+            return current_stat
+
+        def close_then_replace(descriptor):
+            real_close(descriptor)
+            lock_path.unlink(missing_ok=True)
+            lock_path.write_text("replacement", encoding="utf-8")
+
+        with (
+            mock.patch.object(
+                core_module.os, "lstat", side_effect=lstat_with_immediate_inode_reuse
+            ),
+            mock.patch.object(core_module.os, "close", side_effect=close_then_replace),
+        ):
+            with core_module._exclusive_destination_lock(destination, "test output"):
+                original_stat = real_lstat(lock_path)
+
+        self.assertEqual("replacement", lock_path.read_text(encoding="utf-8"))
+
     def test_directory_publication_interrupt_cleans_owned_inode_and_preserves_races(
         self,
     ) -> None:
@@ -397,20 +434,72 @@ class HarnessTests(unittest.TestCase):
         stage = self.root / "owned-stage"
         child = stage / "artifact"
         child.mkdir(parents=True)
-        stage_identity = training_module._directory_identity(stage, "test stage")
-        child_identity = training_module._directory_identity(child, "test child")
+        stage_ownership = training_module._capture_directory_ownership(
+            stage, "test stage"
+        )
+        child_ownership = training_module._capture_directory_ownership(
+            child, "test child"
+        )
         child.rename(self.root / "original-child")
         child.mkdir()
         (child / "replacement.txt").write_text("preserve", encoding="utf-8")
         with self.assertRaisesRegex(ValidationError, "raced replacement preserved"):
             training_module._cleanup_owned_stage(
                 stage,
-                stage_identity,
+                stage_ownership,
                 "test stage",
-                protected_children=((child, child_identity),),
+                protected_children=((child, child_ownership),),
             )
         self.assertEqual(
             "preserve", (child / "replacement.txt").read_text(encoding="utf-8")
+        )
+
+    @unittest.skipUnless(os.name == "posix", "POSIX inode ownership regression")
+    def test_directory_guards_preserve_immediate_unlink_replacements(self) -> None:
+        source = self.root / "source-immediate-replacement"
+        destination = self.root / "destination-immediate-replacement"
+        source.mkdir()
+        (source / "owned.txt").write_text("owned", encoding="utf-8")
+        replaced = False
+
+        def replace_during_validation(path):
+            nonlocal replaced
+            if not replaced:
+                shutil.rmtree(path)
+                path.mkdir()
+                (path / "replacement.txt").write_text("preserve", encoding="utf-8")
+                replaced = True
+            return path
+
+        with self.assertRaisesRegex(ValidationError, "raced replacement preserved"):
+            training_module._publish_directory_no_clobber(
+                source,
+                destination,
+                "test immediate publication",
+                validator=replace_during_validation,
+            )
+        self.assertEqual(
+            "preserve",
+            (destination / "replacement.txt").read_text(encoding="utf-8"),
+        )
+
+        stage = self.root / "immediate-stage"
+        stage.mkdir()
+        stage_ownership = training_module._capture_directory_ownership(
+            stage, "test immediate stage"
+        )
+        self.assertIsNotNone(stage_ownership.descriptor)
+        shutil.rmtree(stage)
+        stage.mkdir()
+        (stage / "replacement.txt").write_text("preserve", encoding="utf-8")
+        with self.assertRaisesRegex(ValidationError, "raced replacement preserved"):
+            training_module._cleanup_owned_stage(
+                stage,
+                stage_ownership,
+                "test immediate stage",
+            )
+        self.assertEqual(
+            "preserve", (stage / "replacement.txt").read_text(encoding="utf-8")
         )
 
     def test_trainer_provenance_cli_trust_is_all_or_none(self) -> None:

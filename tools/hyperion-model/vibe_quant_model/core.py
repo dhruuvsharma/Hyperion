@@ -458,17 +458,24 @@ def _exclusive_destination_lock(destination: Path, field: str):
         os.fsync(descriptor)
         yield absolute_destination
     finally:
-        os.close(descriptor)
+        descriptor_open = True
         try:
-            current_stat = os.lstat(lock_path)
-        except FileNotFoundError:
-            pass
-        else:
-            if (current_stat.st_dev, current_stat.st_ino) == (
-                lock_stat.st_dev,
-                lock_stat.st_ino,
-            ):
-                os.unlink(lock_path)
+            if os.name == "nt":
+                os.close(descriptor)
+                descriptor_open = False
+            try:
+                current_stat = os.lstat(lock_path)
+            except FileNotFoundError:
+                pass
+            else:
+                if (current_stat.st_dev, current_stat.st_ino) == (
+                    lock_stat.st_dev,
+                    lock_stat.st_ino,
+                ):
+                    os.unlink(lock_path)
+        finally:
+            if descriptor_open:
+                os.close(descriptor)
 
 
 def _install_directory_no_clobber(source: Path, destination: Path, field: str) -> None:

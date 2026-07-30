@@ -1504,6 +1504,7 @@ def _write_no_clobber(
     published = False
     installed = False
     installed_identity: tuple[int, int] | None = None
+    identity_guard: int | None = None
     try:
         descriptor, name = tempfile.mkstemp(
             prefix=f".{destination.name}.", suffix=".staging", dir=parent
@@ -1513,6 +1514,10 @@ def _write_no_clobber(
             stream.write(raw)
             stream.flush()
             os.fsync(stream.fileno())
+            if os.name == "posix":
+                # Retain the original inode through final validation so cleanup
+                # cannot mistake an unlink/recreate replacement for owned output.
+                identity_guard = os.dup(stream.fileno())
         prepublish_validator(staged)
         staged_stat = staged.lstat()
         installed_identity = (staged_stat.st_dev, staged_stat.st_ino)
@@ -1564,20 +1569,24 @@ def _write_no_clobber(
                 pass
         raise
     finally:
-        if staged is not None:
-            try:
-                staged.unlink()
-            except FileNotFoundError:
-                pass
-            except OSError as error:
-                if not published:
-                    raise ValidationError(
-                        f"{field}: publication failed "
-                        "and staging cleanup failed; residual signed approval requires "
-                        f"removal: {staged}"
-                    ) from error
-                # Publication has succeeded. Cleanup failure must not turn a durable
-                # no-clobber destination into a reported failure.
+        try:
+            if staged is not None:
+                try:
+                    staged.unlink()
+                except FileNotFoundError:
+                    pass
+                except OSError as error:
+                    if not published:
+                        raise ValidationError(
+                            f"{field}: publication failed "
+                            "and staging cleanup failed; residual signed approval "
+                            f"requires removal: {staged}"
+                        ) from error
+                    # Publication has succeeded. Cleanup failure must not turn a
+                    # durable no-clobber destination into a reported failure.
+        finally:
+            if identity_guard is not None:
+                os.close(identity_guard)
 
 
 def create_evaluation_authoring_approval(
