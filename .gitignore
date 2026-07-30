@@ -1,0 +1,45 @@
+# Build and editor output
+**/bin/
+**/obj/
+.vs/
+.idea/
+.vscode/
+
+# Python environments and caches
+.venv/
+**/.venv/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Local work and rendered QA output
+tmp/
+docs/engineering/rendered/
+docs/engineering/.render-*/
+
+# Model data, weights, checkpoints, and local runtime state
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.onnx
+checkpoints/
+model-cache/
+runs/
+
+# Secrets and private signing material
+*.private.pem
+*.private.key
+*.p12
+*.pfx
+.env
+.env.*
+secrets/
+
+# Local databases and logs
+*.db
+*.db-shm
+*.db-wal
+*.log

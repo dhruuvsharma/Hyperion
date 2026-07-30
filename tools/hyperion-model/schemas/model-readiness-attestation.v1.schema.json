@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/model-readiness-attestation.v1.schema.json",
+  "title": "Vibe Quant private model-readiness attestation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "nonce", "keyId", "proof"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.model-readiness/v1"},
+    "nonce": {"type": "string", "pattern": "^[A-Za-z0-9_-]{43}$"},
+    "keyId": {"$ref": "#/$defs/id"},
+    "proof": {"type": "string", "pattern": "^[A-Za-z0-9_-]{43}$"}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"}
+  }
+}

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>hyperion</AssemblyName>
+    <RootNamespace>DaxAlgo.Coordinator.Cli</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\AI\TradingTerminal.Ai.Coordinator.Client\TradingTerminal.Ai.Coordinator.Client.csproj" />
+    <ProjectReference Include="..\..\AI\TradingTerminal.Ai.Coordinator\TradingTerminal.Ai.Coordinator.csproj" />
+    <ProjectReference Include="..\..\AI\DaxAlgo.Daxq.Contracts\DaxAlgo.Daxq.Contracts.csproj" />
+    <ProjectReference Include="..\..\AI\DaxAlgo.Daxq.Vm\DaxAlgo.Daxq.Vm.csproj" />
+    <ProjectReference Include="..\DaxAlgo.Daxq.Compiler\DaxAlgo.Daxq.Compiler.csproj" />
+    <InternalsVisibleTo Include="TradingTerminal.Tests.Pro.Headless" />
+  </ItemGroup>
+
+</Project>

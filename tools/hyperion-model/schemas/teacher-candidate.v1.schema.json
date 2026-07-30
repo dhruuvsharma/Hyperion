@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/teacher-candidate.v1.schema.json",
+  "title": "Vibe Quant captured teacher candidate v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "candidateId", "candidateSha256", "batchId", "manifestSha256", "teacher", "task", "capturePolicy", "generation", "sources", "output", "usage", "latencyMs", "capturedAtUtc", "authority", "review"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.teacher-candidate/v1"},
+    "candidateId": {"type": "string", "pattern": "^vqtgenrow-[0-9a-f]{64}$"},
+    "candidateSha256": {"$ref": "#/$defs/sha256"},
+    "batchId": {"type": "string", "pattern": "^vqtgen-[0-9a-f]{64}$"},
+    "manifestSha256": {"$ref": "#/$defs/sha256"},
+    "runtimeBindingFileSha256": {"$ref": "#/$defs/sha256"},
+    "teacher": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidateCatalogSha256", "candidateId", "modelId", "modelRevision", "profileVersion", "chatTemplateSha256", "runtimeSha256", "executionModelId"],
+      "properties": {
+        "candidateCatalogSha256": {"$ref": "#/$defs/sha256"},
+        "candidateId": {"$ref": "#/$defs/id"},
+        "modelId": {"type": "string", "minLength": 1, "maxLength": 500},
+        "modelRevision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "profileVersion": {"type": "string", "minLength": 1, "maxLength": 500},
+        "chatTemplateSha256": {"$ref": "#/$defs/sha256"},
+        "runtimeSha256": {"$ref": "#/$defs/sha256"},
+        "executionModelId": {"type": "string", "pattern": "^daxalgo-teacher-sha256-[0-9a-f]{64}$"}
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskIndex", "taskCount", "taskId", "taskSha256", "taskKind", "domains", "messages", "modelMessages", "promptSha256", "contaminationGroup", "knowledgeClass", "cutoffUtc", "maxOutputTokens", "evidence"],
+      "properties": {
+        "taskIndex": {"type": "integer", "minimum": 0, "maximum": 9999},
+        "taskCount": {"type": "integer", "minimum": 1, "maximum": 10000},
+        "taskId": {"$ref": "#/$defs/id"},
+        "taskSha256": {"$ref": "#/$defs/sha256"},
+        "taskKind": {"$ref": "#/$defs/taskKind"},
+        "domains": {"$ref": "#/$defs/domains"},
+        "messages": {"$ref": "#/$defs/messages"},
+        "modelMessages": {"$ref": "#/$defs/messages"},
+        "promptSha256": {"$ref": "#/$defs/sha256"},
+        "contaminationGroup": {"$ref": "#/$defs/id"},
+        "knowledgeClass": {"enum": ["candidate-stable", "retrieval-only"]},
+        "cutoffUtc": {"$ref": "#/$defs/utcSecond"},
+        "maxOutputTokens": {"type": "integer", "minimum": 1, "maximum": 262144},
+        "evidence": {"$ref": "#/$defs/evidence"}
+      }
+    },
+    "capturePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["temperature", "topP", "seeds", "budget"],
+      "properties": {
+        "temperature": {"type": "number", "exclusiveMinimum": 0, "maximum": 2},
+        "topP": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "seeds": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {"type": "integer", "minimum": 0, "maximum": 2147483647}
+        },
+        "budget": {"$ref": "#/$defs/budget"}
+      }
+    },
+    "generation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sampleIndex", "seed", "maxOutputTokens"],
+      "properties": {
+        "sampleIndex": {"type": "integer", "minimum": 0, "maximum": 7},
+        "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+        "maxOutputTokens": {"type": "integer", "minimum": 1, "maximum": 262144}
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/source"}
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "sha256", "byteCount", "finishReason"],
+      "properties": {
+        "text": {"type": "string", "minLength": 1, "maxLength": 2000000},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "byteCount": {"type": "integer", "minimum": 1, "maximum": 2000000},
+        "finishReason": {"const": "stop"}
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["promptTokens", "completionTokens", "totalTokens"],
+      "properties": {
+        "promptTokens": {"type": "integer", "minimum": 1, "maximum": 200000000},
+        "completionTokens": {"type": "integer", "minimum": 1, "maximum": 200000000},
+        "totalTokens": {"type": "integer", "minimum": 2, "maximum": 200000000}
+      }
+    },
+    "latencyMs": {"type": "integer", "minimum": 0, "maximum": 86400000},
+    "capturedAtUtc": {"$ref": "#/$defs/utcSecond"},
+    "authority": {"$ref": "#/$defs/authority"},
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "eligibleForDataset", "eligibleForTraining"],
+      "properties": {
+        "status": {"const": "unreviewed"},
+        "eligibleForDataset": {"const": false},
+        "eligibleForTraining": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "utcSecond": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"
+    },
+    "taskKind": {
+      "enum": ["ArchitectureDesign", "CodeGeneration", "CodeRepair", "CodeReview", "GeneralQuestionAnswering", "MarketAnalysis", "PortfolioAnalysis", "QuantitativeReasoning", "RiskAnalysis", "StatisticalReasoning", "WpfUiDesign"]
+    },
+    "domains": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {"enum": ["CSharp", "DaxAlgoArchitecture", "QuantitativeMath", "ProbabilityStatistics", "RiskManagement", "PortfolioManagement", "FinanceMarkets", "WpfUiDesign"]}
+    },
+    "messages": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "content"],
+        "properties": {
+          "role": {"enum": ["system", "user", "assistant"]},
+          "content": {"type": "string", "minLength": 1, "maxLength": 500000}
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 2000}
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "content", "contentSha256", "provenance", "license", "retrievedAtUtc", "availableAtUtc", "uri"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "title": {"type": "string", "minLength": 1, "maxLength": 500},
+        "content": {"type": "string", "minLength": 1, "maxLength": 500000},
+        "contentSha256": {"$ref": "#/$defs/sha256"},
+        "provenance": {"type": "string", "minLength": 1, "maxLength": 2000},
+        "license": {"type": "string", "minLength": 1, "maxLength": 500},
+        "retrievedAtUtc": {"$ref": "#/$defs/utcSecond"},
+        "availableAtUtc": {"$ref": "#/$defs/utcSecond"},
+        "uri": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "format": "uri", "maxLength": 2000}
+          ]
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxRequests", "maxPromptTokens", "maxCompletionTokens", "maxTotalTokens"],
+      "properties": {
+        "maxRequests": {"type": "integer", "minimum": 1, "maximum": 100000},
+        "maxPromptTokens": {"type": "integer", "minimum": 1, "maximum": 200000000},
+        "maxCompletionTokens": {"type": "integer", "minimum": 1, "maximum": 200000000},
+        "maxTotalTokens": {"type": "integer", "minimum": 1, "maximum": 200000000}
+      }
+    },
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mayStore", "mayEvaluate", "mayTrain", "mayUploadToProvider", "mayRedistribute"],
+      "properties": {
+        "mayStore": {"const": true},
+        "mayEvaluate": {"const": true},
+        "mayTrain": {"const": false},
+        "mayUploadToProvider": {"const": false},
+        "mayRedistribute": {"const": false}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["producer", "reviewer", "provenance", "license", "rightsBasis", "rights"],
+      "properties": {
+        "producer": {"$ref": "#/$defs/id"},
+        "reviewer": {"$ref": "#/$defs/id"},
+        "provenance": {"type": "string", "minLength": 1, "maxLength": 2000},
+        "license": {"type": "string", "minLength": 1, "maxLength": 500},
+        "rightsBasis": {"type": "string", "minLength": 1, "maxLength": 2000},
+        "rights": {"$ref": "#/$defs/rights"}
+      }
+    }
+  }
+}

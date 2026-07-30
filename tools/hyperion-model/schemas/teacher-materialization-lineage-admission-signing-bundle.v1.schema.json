@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/teacher-materialization-lineage-admission-signing-bundle.v1.schema.json",
+  "title": "DaxAlgo non-authorizing teacher materialization lineage admission signing bundle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "bundleId", "status", "authority", "trust", "lineageAdmissionId", "reviewedCorpusSha256", "materializationId", "signatureContract", "request"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.teacher-materialization-lineage-admission-signing-bundle/v1"},
+    "bundleId": {"type": "string", "pattern": "^vqtlineagesigning-[0-9a-f]{64}$"},
+    "status": {"const": "unsigned-non-authorizing"},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["teacherLineageAdmissionIssuance", "reviewReceiptIssuance", "runtimeAttestation", "teacherWeightAttestation", "rightsReview", "release", "training", "evaluation", "promotionDecision", "deployment", "hostedServing", "installation", "verifierExecution", "strategyExecution"],
+      "properties": {
+        "teacherLineageAdmissionIssuance": {"const": false},
+        "reviewReceiptIssuance": {"const": false},
+        "runtimeAttestation": {"const": false},
+        "teacherWeightAttestation": {"const": false},
+        "rightsReview": {"const": false},
+        "release": {"const": false},
+        "training": {"const": false},
+        "evaluation": {"const": false},
+        "promotionDecision": {"const": false},
+        "deployment": {"const": false},
+        "hostedServing": {"const": false},
+        "installation": {"const": false},
+        "verifierExecution": {"const": false},
+        "strategyExecution": {"const": false}
+      }
+    },
+    "trust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publicKeySpkiSha256", "audience", "keyId", "signerRole"],
+      "properties": {
+        "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+        "audience": {"$ref": "#/$defs/id"},
+        "keyId": {"$ref": "#/$defs/id"},
+        "signerRole": {"$ref": "#/$defs/id"}
+      }
+    },
+    "lineageAdmissionId": {"$ref": "#/$defs/lineageAdmissionId"},
+    "reviewedCorpusSha256": {"$ref": "#/$defs/sha256"},
+    "materializationId": {"type": "string", "pattern": "^vqtmat-[0-9a-f]{64}$"},
+    "signatureContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "hashAlgorithm", "messageType", "signatureInputEncoding", "acceptedSignatureFormats"],
+      "properties": {
+        "algorithm": {"const": "ES256"},
+        "hashAlgorithm": {"const": "SHA-256"},
+        "messageType": {"const": "digest"},
+        "signatureInputEncoding": {"const": "base64url"},
+        "acceptedSignatureFormats": {
+          "type": "array",
+          "prefixItems": [
+            {"const": "asn1-der"},
+            {"const": "ieee-p1363-fixed-64"}
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lineageAdmissionId", "payloadSha256", "payload", "signatureInputSha256", "signaturePreimage", "signatureInput"],
+      "properties": {
+        "lineageAdmissionId": {"$ref": "#/$defs/lineageAdmissionId"},
+        "payloadSha256": {"$ref": "#/$defs/sha256"},
+        "payload": {"allOf": [{"$ref": "#/$defs/base64url"}, {"maxLength": 10666667}]},
+        "signatureInputSha256": {"$ref": "#/$defs/sha256"},
+        "signaturePreimage": {"allOf": [{"$ref": "#/$defs/base64url"}, {"maxLength": 10800000}]},
+        "signatureInput": {"type": "string", "minLength": 43, "maxLength": 43, "pattern": "^[A-Za-z0-9_-]{43}$"}
+      }
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "base64url": {"type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9_-]+$"},
+    "lineageAdmissionId": {"type": "string", "pattern": "^vqtlineage-[0-9a-f]{64}$"}
+  }
+}

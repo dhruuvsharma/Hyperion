@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "daxalgo.vibe-quant.training-runtime-profile/v1",
+  "python": {
+    "implementation": "CPython",
+    "major": 3,
+    "minor": 11
+  },
+  "platform": {
+    "system": "Linux",
+    "machine": "x86_64",
+    "manylinux": "manylinux_2_28"
+  },
+  "cuda": {
+    "runtimeVersion": "12.1"
+  },
+  "directDependencies": {
+    "accelerate": "1.2.1",
+    "bitsandbytes": "0.45.2",
+    "cryptography": "48.0.0",
+    "datasets": "3.2.0",
+    "peft": "0.14.0",
+    "torch": "2.5.1+cu121",
+    "transformers": "4.48.3",
+    "trl": "0.15.2"
+  },
+  "pylock": {
+    "fileName": "pylock.train.toml",
+    "sha256": "9e55bffe81d66a1f85bbacb6f910cac5fc01f0bfff99b4418fa53188784b3e72"
+  }
+}

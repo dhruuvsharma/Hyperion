@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/expert-model-review-receipt-signature-set.v1.schema.json",
+  "title": "DaxAlgo detached expert-model review-receipt signature set v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "signatureSetId", "signingBundleId", "signingBundleSha256", "sourceCorpusSha256", "receiptCount", "publicKeySpkiSha256", "bundleAuthorization", "signatures"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.expert-model-review-receipt-signature-set/v1"},
+    "signatureSetId": {"type": "string", "pattern": "^vqreviewsignatures-[0-9a-f]{64}$"},
+    "signingBundleId": {"type": "string", "pattern": "^vqreviewsigning-[0-9a-f]{64}$"},
+    "signingBundleSha256": {"$ref": "#/$defs/sha256"},
+    "sourceCorpusSha256": {"$ref": "#/$defs/sha256"},
+    "receiptCount": {"type": "integer", "minimum": 1, "maximum": 100000},
+    "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+    "bundleAuthorization": {"$ref": "#/$defs/bundleAuthorization"},
+    "signatures": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100000,
+      "items": {"$ref": "#/$defs/signature"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "bundleAuthorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "receiptFinalizationAuthorized", "reviewTruthAuthorized", "rightsAuthorized", "releaseAuthorized", "trainingAuthorized", "evaluationAuthorized", "providerUploadAuthorized", "promotionAuthorized", "deploymentAuthorized", "signatureInputSha256", "signatureInput", "format", "signature"],
+      "properties": {
+        "scope": {"const": "finalize-exact-review-receipt-set-only"},
+        "receiptFinalizationAuthorized": {"const": true},
+        "reviewTruthAuthorized": {"const": false},
+        "rightsAuthorized": {"const": false},
+        "releaseAuthorized": {"const": false},
+        "trainingAuthorized": {"const": false},
+        "evaluationAuthorized": {"const": false},
+        "providerUploadAuthorized": {"const": false},
+        "promotionAuthorized": {"const": false},
+        "deploymentAuthorized": {"const": false},
+        "signatureInputSha256": {"$ref": "#/$defs/sha256"},
+        "signatureInput": {"type": "string", "minLength": 43, "maxLength": 43, "pattern": "^[A-Za-z0-9_-]{43}$"},
+        "format": {"enum": ["asn1-der", "ieee-p1363-fixed-64"]},
+        "signature": {"type": "string", "minLength": 1, "maxLength": 107, "pattern": "^[A-Za-z0-9_-]+$"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"format": {"const": "ieee-p1363-fixed-64"}}, "required": ["format"]},
+          "then": {"properties": {"signature": {"minLength": 86, "maxLength": 86}}}
+        }
+      ]
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ordinal", "receiptId", "signatureInputSha256", "format", "signature"],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 0, "maximum": 99999},
+        "receiptId": {"type": "string", "pattern": "^vqreview-[0-9a-f]{64}$"},
+        "signatureInputSha256": {"$ref": "#/$defs/sha256"},
+        "format": {"enum": ["asn1-der", "ieee-p1363-fixed-64"]},
+        "signature": {"type": "string", "minLength": 1, "maxLength": 107, "pattern": "^[A-Za-z0-9_-]+$"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"format": {"const": "ieee-p1363-fixed-64"}}, "required": ["format"]},
+          "then": {"properties": {"signature": {"minLength": 86, "maxLength": 86}}}
+        }
+      ]
+    }
+  }
+}

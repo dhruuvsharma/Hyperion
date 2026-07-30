@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/teacher-selection-manifest.v1.schema.json",
+  "title": "Vibe Quant teacher selection manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "purpose", "inputs", "selection", "outputPolicy"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.teacher-selection-manifest/v1"},
+    "purpose": {"const": "independent-review-draft"},
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidateSet", "generationManifest", "candidateCatalog", "overlapDenySet"],
+      "properties": {
+        "candidateSet": {"$ref": "#/$defs/inputArtifact"},
+        "generationManifest": {"$ref": "#/$defs/inputArtifact"},
+        "candidateCatalog": {"$ref": "#/$defs/inputArtifact"},
+        "overlapDenySet": {"$ref": "#/$defs/inputArtifact"}
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selectedBy", "selectedAtUtc", "basis", "candidates"],
+      "properties": {
+        "selectedBy": {"$ref": "#/$defs/id"},
+        "selectedAtUtc": {"$ref": "#/$defs/utcSecond"},
+        "basis": {"type": "string", "minLength": 1, "maxLength": 2000},
+        "candidates": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10000,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["candidateId", "candidateSha256"],
+            "properties": {
+              "candidateId": {"type": "string", "pattern": "^vqtgenrow-[0-9a-f]{64}$"},
+              "candidateSha256": {"$ref": "#/$defs/sha256"}
+            }
+          }
+        }
+      }
+    },
+    "outputPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "split", "lineageOrigin", "reviewStatus", "verified", "verifiedAtUtc", "compileSucceeded", "testsPassed", "useForTraining", "rights", "sourceRights"],
+      "properties": {
+        "schemaVersion": {"const": "expert-model-dataset/v1"},
+        "split": {"const": "development"},
+        "lineageOrigin": {"const": "OpenWeightTeacher"},
+        "reviewStatus": {"const": "draft"},
+        "verified": {"const": false},
+        "verifiedAtUtc": {"const": null},
+        "compileSucceeded": {"const": false},
+        "testsPassed": {"const": false},
+        "useForTraining": {"const": false},
+        "rights": {"$ref": "#/$defs/storageEvaluationRights"},
+        "sourceRights": {"$ref": "#/$defs/storageEvaluationRights"}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "utcSecond": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"
+    },
+    "inputArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1, "maxLength": 500},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "storageEvaluationRights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mayStore", "mayEvaluate", "mayTrain", "mayUploadToProvider", "mayRedistribute"],
+      "properties": {
+        "mayStore": {"const": true},
+        "mayEvaluate": {"const": true},
+        "mayTrain": {"const": false},
+        "mayUploadToProvider": {"const": false},
+        "mayRedistribute": {"const": false}
+      }
+    }
+  }
+}

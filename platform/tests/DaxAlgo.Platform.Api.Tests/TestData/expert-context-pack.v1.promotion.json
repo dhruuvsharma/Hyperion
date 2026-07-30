@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "daxalgo-expert-context-pack/v1",
+  "corpusId": "daxalgo-private",
+  "corpusVersion": "2026.07.27-test",
+  "normalizerVersion": "utf8-lf-nfc/v1",
+  "chunkerVersion": "line-window-4000-80-overlap6/v1",
+  "tokenizerVersion": "code-camel-alnum/v1",
+  "scorerVersion": "integer-exact-title-domain/v1",
+  "createdAtUtc": "2025-01-15T12:00:00+00:00",
+  "cutoffUtc": "2025-01-15T12:00:00+00:00",
+  "manifestSha256": "359eb2cf0101b497840713963636d72695f686ade541c4e1cce1a322bf97f299",
+  "indexSha256": "382d43e1dd48f15248bf7f45f0ca1fd7e76553566e8ebe29067000439652c8ad",
+  "packSha256": "3c273cdd7ee54f9bfd5933451c2c1530d893400e3e6595b003fda08a499b0e65",
+  "sources": [
+    {
+      "id": "risk",
+      "relativePath": "risk.md",
+      "title": "DaxAlgo risk architecture",
+      "provenance": "Reviewed private DaxAlgo documentation.",
+      "license": "DaxAlgo private; provider upload permitted.",
+      "domains": [
+        "RiskManagement"
+      ],
+      "rights": {
+        "mayStore": true,
+        "mayEvaluate": true,
+        "mayTrain": false,
+        "mayUploadToProvider": true,
+        "mayRedistribute": false
+      },
+      "availableAtUtc": "2025-01-15T12:00:00+00:00",
+      "rawSha256": "6d491f14ea2d11238d3a88b21e6a7d6f7eff79f1255daed90d5a8d73bd382211",
+      "contentSha256": "6d491f14ea2d11238d3a88b21e6a7d6f7eff79f1255daed90d5a8d73bd382211",
+      "rawByteCount": 76,
+      "lineCount": 1
+    }
+  ],
+  "chunks": [
+    {
+      "id": "risk.00000.6d491f14ea2d",
+      "sourceId": "risk",
+      "ordinal": 0,
+      "startLine": 1,
+      "endLine": 1,
+      "content": "RiskBudget and DrawdownGuard are required for portfolio strategy allocation.",
+      "contentSha256": "6d491f14ea2d11238d3a88b21e6a7d6f7eff79f1255daed90d5a8d73bd382211",
+      "domains": [
+        "RiskManagement"
+      ]
+    }
+  ]
+}

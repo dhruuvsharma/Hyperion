@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/base-runtime-signer-response.v1.schema.json",
+  "title": "Vibe Quant external base-runtime signer response v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "requestId", "purpose", "providerKeyReference", "keyId", "publicKeySpkiSha256", "algorithm", "messageType", "signatureFormat", "signatureInputSha256", "signatureInputDigest", "signature"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.base-runtime-signer-response/v1"},
+    "requestId": {"$ref": "#/$defs/base64url32"},
+    "purpose": {"enum": ["startup-proof", "runtime-attestation"]},
+    "providerKeyReference": {"$ref": "#/$defs/providerKeyReference"},
+    "keyId": {"$ref": "#/$defs/id"},
+    "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+    "algorithm": {"const": "ES256"},
+    "messageType": {"const": "sha256-digest"},
+    "signatureFormat": {"$ref": "#/$defs/signatureFormat"},
+    "signatureInputSha256": {"$ref": "#/$defs/sha256"},
+    "signatureInputDigest": {"$ref": "#/$defs/base64url32"},
+    "signature": {"$ref": "#/$defs/base64url"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"signatureFormat": {"const": "ieee-p1363-fixed-64"}},
+        "required": ["signatureFormat"]
+      },
+      "then": {
+        "properties": {
+          "signature": {"pattern": "^[A-Za-z0-9_-]{85}[AQgw]$"}
+        }
+      },
+      "else": {
+        "properties": {
+          "signature": {"minLength": 11, "maxLength": 96}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "id": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},
+    "providerKeyReference": {"type": "string", "minLength": 1, "maxLength": 1000, "pattern": "^[^\\u0000-\\u001F\\u007F]+$"},
+    "signatureFormat": {"enum": ["asn1-der", "ieee-p1363-fixed-64"]},
+    "base64url": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}|[A-Za-z0-9_-]{3})?$"
+    },
+    "base64url32": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$"
+    }
+  }
+}

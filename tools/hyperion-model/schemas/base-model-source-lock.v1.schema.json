@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/base-model-source-lock.v1.schema.json",
+  "title": "Vibe Quant approved base-model source lock v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "candidateCatalogSha256", "candidates"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.base-model-source-lock/v1"},
+    "candidateCatalogSha256": {"$ref": "#/$defs/sha256"},
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {"$ref": "#/$defs/candidate"}
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1, "maxLength": 255},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 0, "maximum": 100000000000}
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidateId", "modelId", "revision", "files"],
+      "properties": {
+        "candidateId": {"$ref": "#/$defs/id"},
+        "modelId": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$"},
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "files": {"type": "array", "minItems": 4, "maxItems": 1024, "items": {"$ref": "#/$defs/file"}}
+      }
+    }
+  }
+}

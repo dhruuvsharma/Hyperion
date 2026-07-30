@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/csharp-strategy-verification-result.v1.schema.json",
+  "title": "Vibe Quant C# strategy verification result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "resultSha256", "request", "source", "expectations", "workerResult", "image", "sandboxPolicy", "checks", "accepted"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.csharp-strategy-verification-result/v1"},
+    "resultSha256": {"$ref": "#/$defs/sha256"},
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requestId", "sha256"],
+      "properties": {
+        "requestId": {"$ref": "#/$defs/id"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "source": {"$ref": "#/$defs/hashIdentity"},
+    "expectations": {"$ref": "#/$defs/hashIdentity"},
+    "workerResult": {"$ref": "#/$defs/hashIdentity"},
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "digest", "imageId"],
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 73,
+          "maxLength": 500,
+          "pattern": "^[a-z0-9][a-z0-9._:/-]*@sha256:[0-9a-f]{64}$"
+        },
+        "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "imageId": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    },
+    "sandboxPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "sha256"],
+      "properties": {
+        "profile": {"const": "daxalgo.verifier.docker-sandbox-policy/v1"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "prefixItems": [
+        {"$ref": "#/$defs/sourceBindingCheck"},
+        {"$ref": "#/$defs/compileCheck"},
+        {"$ref": "#/$defs/analyzersCheck"},
+        {"$ref": "#/$defs/deterministicExecutionCheck"},
+        {"$ref": "#/$defs/referenceCasesCheck"},
+        {"$ref": "#/$defs/sandboxPolicyCheck"}
+      ],
+      "items": false
+    },
+    "accepted": {"type": "boolean"}
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "hashIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256"],
+      "properties": {"sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "checkBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkId", "passed", "evidence", "evidenceSha256"],
+      "properties": {
+        "checkId": {"type": "string"},
+        "passed": {"type": "boolean"},
+        "evidence": {"type": "string", "minLength": 1, "maxLength": 512},
+        "evidenceSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "sourceBindingCheck": {
+      "allOf": [
+        {"$ref": "#/$defs/checkBase"},
+        {"properties": {"checkId": {"const": "source-binding"}}}
+      ]
+    },
+    "compileCheck": {
+      "allOf": [
+        {"$ref": "#/$defs/checkBase"},
+        {"properties": {"checkId": {"const": "compile"}}}
+      ]
+    },
+    "analyzersCheck": {
+      "allOf": [
+        {"$ref": "#/$defs/checkBase"},
+        {"properties": {"checkId": {"const": "analyzers"}}}
+      ]
+    },
+    "deterministicExecutionCheck": {
+      "allOf": [
+        {"$ref": "#/$defs/checkBase"},
+        {"properties": {"checkId": {"const": "deterministic-execution"}}}
+      ]
+    },
+    "referenceCasesCheck": {
+      "allOf": [
+        {"$ref": "#/$defs/checkBase"},
+        {"properties": {"checkId": {"const": "reference-cases"}}}
+      ]
+    },
+    "sandboxPolicyCheck": {
+      "allOf": [
+        {"$ref": "#/$defs/checkBase"},
+        {"properties": {"checkId": {"const": "sandbox-policy"}}}
+      ]
+    }
+  }
+}

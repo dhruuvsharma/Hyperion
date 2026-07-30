@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/trainer-provenance.v1.schema.json",
+  "title": "Vibe Quant trainer provenance v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "trainerProvenanceId",
+    "scope",
+    "reusable",
+    "trainingProduced",
+    "corpusReviewAuthorized",
+    "releaseAuthorized",
+    "trainingAuthorized",
+    "baseSelectionAuthorized",
+    "evaluationAuthorized",
+    "promotionDecisionAuthorized",
+    "deploymentAuthorized",
+    "hostedServingAuthorized",
+    "installationAuthorized",
+    "verifierExecutionAuthorized",
+    "strategyExecutionAuthorized",
+    "issuedAtUtc",
+    "notBeforeUtc",
+    "expiresAtUtc",
+    "trainerId",
+    "artifactCoreSha256",
+    "fileTreeSha256",
+    "manifestSha256",
+    "runId",
+    "recordedAtUtc",
+    "dataRelease",
+    "baseModel",
+    "datasetSnapshot",
+    "environmentSha256",
+    "statement"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.trainer-provenance/v1"},
+    "trainerProvenanceId": {"type": "string", "pattern": "^vqtrainerprov-[0-9a-f]{64}$"},
+    "scope": {"const": "training-artifact-provenance-only"},
+    "reusable": {"const": false},
+    "trainingProduced": {"const": true},
+    "corpusReviewAuthorized": {"const": false},
+    "releaseAuthorized": {"const": false},
+    "trainingAuthorized": {"const": false},
+    "baseSelectionAuthorized": {"const": false},
+    "evaluationAuthorized": {"const": false},
+    "promotionDecisionAuthorized": {"const": false},
+    "deploymentAuthorized": {"const": false},
+    "hostedServingAuthorized": {"const": false},
+    "installationAuthorized": {"const": false},
+    "verifierExecutionAuthorized": {"const": false},
+    "strategyExecutionAuthorized": {"const": false},
+    "issuedAtUtc": {"$ref": "#/$defs/utc"},
+    "notBeforeUtc": {"$ref": "#/$defs/utc"},
+    "expiresAtUtc": {"$ref": "#/$defs/utc"},
+    "trainerId": {"$ref": "#/$defs/id"},
+    "artifactCoreSha256": {"$ref": "#/$defs/sha256"},
+    "fileTreeSha256": {"$ref": "#/$defs/sha256"},
+    "manifestSha256": {"$ref": "#/$defs/sha256"},
+    "runId": {"type": "string", "pattern": "^vqrun-[0-9a-f]{20}$"},
+    "recordedAtUtc": {"$ref": "#/$defs/utc"},
+    "dataRelease": {"$ref": "#/$defs/releaseIdentity"},
+    "baseModel": {"$ref": "#/$defs/baseModel"},
+    "datasetSnapshot": {"$ref": "#/$defs/datasetSnapshot"},
+    "environmentSha256": {"$ref": "#/$defs/sha256"},
+    "statement": {
+      "const": "This signed non-reusable provenance asserts only that the named trainer produced the exact bound training artifact. It grants no corpus review, release, future training, base selection, evaluation, promotion, deployment, hosted serving, installation, verifier execution, or strategy execution authority."
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "releaseIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["releaseId", "releaseSha256", "manifestSha256"],
+      "properties": {
+        "releaseId": {"type": "string", "pattern": "^vqrel-[0-9a-f]{64}$"},
+        "releaseSha256": {"$ref": "#/$defs/sha256"},
+        "manifestSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "baseModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidateId", "modelId", "revision"],
+      "properties": {
+        "candidateId": {"type": "string", "minLength": 1, "maxLength": 200},
+        "modelId": {"type": "string", "minLength": 1, "maxLength": 500},
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+      }
+    },
+    "datasetSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "recordCount"],
+      "properties": {
+        "path": {"const": "inputs/dataset.sft.jsonl"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "recordCount": {"type": "integer", "minimum": 1, "maximum": 100000}
+      }
+    }
+  }
+}

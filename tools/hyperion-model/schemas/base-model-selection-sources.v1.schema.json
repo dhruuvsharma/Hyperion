@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/base-model-selection-sources.v1.schema.json",
+  "title": "DaxAlgo base-model selection live source manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "selectedCandidateId", "candidates"],
+  "properties": {
+    "schemaVersion": {
+      "const": "daxalgo.vibe-quant.base-model-selection-sources/v1"
+    },
+    "selectedCandidateId": {"$ref": "#/$defs/id"},
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {"$ref": "#/$defs/candidate"}
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"
+    },
+    "path": {"type": "string", "minLength": 1, "maxLength": 32767},
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidateId",
+        "promotionEvidencePath",
+        "responsesPath",
+        "verifierResultsPath",
+        "policyPath",
+        "profilePath",
+        "snapshotManifestPath",
+        "snapshotPath"
+      ],
+      "properties": {
+        "candidateId": {"$ref": "#/$defs/id"},
+        "promotionEvidencePath": {"$ref": "#/$defs/path"},
+        "responsesPath": {"$ref": "#/$defs/path"},
+        "verifierResultsPath": {"$ref": "#/$defs/path"},
+        "policyPath": {"$ref": "#/$defs/path"},
+        "profilePath": {"$ref": "#/$defs/path"},
+        "snapshotManifestPath": {"$ref": "#/$defs/path"},
+        "snapshotPath": {"$ref": "#/$defs/path"}
+      }
+    }
+  }
+}

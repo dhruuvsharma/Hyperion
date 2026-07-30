@@ -1,0 +1,15 @@
+{
+  "formatVersion": 1,
+  "vmAbiVersion": 3,
+  "mapDirection": "encoded_to_canonical",
+  "entries": [
+    { "encodedId": 1, "hostId": 1, "name": "Bar", "wireName": "bar", "callable": true },
+    { "encodedId": 2, "hostId": 2, "name": "Ind", "wireName": "ind", "callable": true },
+    { "encodedId": 3, "hostId": 3, "name": "Param", "wireName": "param", "callable": true },
+    { "encodedId": 4, "hostId": 4, "name": "Emit", "wireName": "emit", "callable": true },
+    { "encodedId": 5, "hostId": 5, "name": "State", "wireName": "state", "callable": false },
+    { "encodedId": 6, "hostId": 6, "name": "TIndex", "wireName": "tindex", "callable": true },
+    { "encodedId": 7, "hostId": 7, "name": "Rng", "wireName": "rng", "callable": true },
+    { "encodedId": 8, "hostId": 8, "name": "Log", "wireName": "log", "callable": true }
+  ]
+}

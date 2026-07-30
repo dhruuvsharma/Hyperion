@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/trainer-provenance-signing-bundle.v1.schema.json",
+  "title": "DaxAlgo non-authorizing trainer provenance signing bundle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "bundleId", "status", "authority", "trust", "trainerProvenanceId", "artifactCoreSha256", "artifactCore", "validity", "signatureContract", "request"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.trainer-provenance-signing-bundle/v1"},
+    "bundleId": {"type": "string", "pattern": "^vqtrainerprovsigning-[0-9a-f]{64}$"},
+    "status": {"const": "unsigned-non-authorizing"},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trainerProvenanceIssuance", "corpusReview", "release", "training", "baseSelection", "evaluation", "promotionDecision", "deployment", "hostedServing", "installation", "verifierExecution", "strategyExecution"],
+      "properties": {
+        "trainerProvenanceIssuance": {"const": false},
+        "corpusReview": {"const": false},
+        "release": {"const": false},
+        "training": {"const": false},
+        "baseSelection": {"const": false},
+        "evaluation": {"const": false},
+        "promotionDecision": {"const": false},
+        "deployment": {"const": false},
+        "hostedServing": {"const": false},
+        "installation": {"const": false},
+        "verifierExecution": {"const": false},
+        "strategyExecution": {"const": false}
+      }
+    },
+    "trust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publicKeySpkiSha256", "audience", "keyId", "signerRole"],
+      "properties": {
+        "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+        "audience": {"$ref": "#/$defs/id"},
+        "keyId": {"$ref": "#/$defs/id"},
+        "signerRole": {"$ref": "#/$defs/id"}
+      }
+    },
+    "trainerProvenanceId": {"$ref": "#/$defs/provenanceId"},
+    "artifactCoreSha256": {"$ref": "#/$defs/sha256"},
+    "artifactCore": {"allOf": [{"$ref": "#/$defs/base64url"}, {"maxLength": 2666667}]},
+    "validity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuedAtUtc", "notBeforeUtc", "expiresAtUtc"],
+      "properties": {
+        "issuedAtUtc": {"$ref": "#/$defs/utc"},
+        "notBeforeUtc": {"$ref": "#/$defs/utc"},
+        "expiresAtUtc": {"$ref": "#/$defs/utc"}
+      }
+    },
+    "signatureContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "hashAlgorithm", "inputEncoding", "acceptedModes", "acceptedSignatureFormats"],
+      "properties": {
+        "algorithm": {"const": "ES256"},
+        "hashAlgorithm": {"const": "SHA-256"},
+        "inputEncoding": {"const": "base64url"},
+        "acceptedModes": {
+          "type": "array",
+          "prefixItems": [{"const": "raw-message"}, {"const": "sha256-digest"}],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "acceptedSignatureFormats": {
+          "type": "array",
+          "prefixItems": [{"const": "asn1-der"}, {"const": "ieee-p1363-fixed-64"}],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trainerProvenanceId", "payloadSha256", "payload", "signatureInputSha256", "signaturePreimage", "signatureInput"],
+      "properties": {
+        "trainerProvenanceId": {"$ref": "#/$defs/provenanceId"},
+        "payloadSha256": {"$ref": "#/$defs/sha256"},
+        "payload": {"allOf": [{"$ref": "#/$defs/base64url"}, {"maxLength": 43691}]},
+        "signatureInputSha256": {"$ref": "#/$defs/sha256"},
+        "signaturePreimage": {"allOf": [{"$ref": "#/$defs/base64url"}, {"maxLength": 133334}]},
+        "signatureInput": {"type": "string", "minLength": 43, "maxLength": 43, "pattern": "^[A-Za-z0-9_-]{43}$"}
+      }
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "provenanceId": {"type": "string", "pattern": "^vqtrainerprov-[0-9a-f]{64}$"},
+    "utc": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+    "base64url": {"type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9_-]+$"}
+  }
+}

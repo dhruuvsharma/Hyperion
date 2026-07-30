@@ -1,0 +1,56 @@
+name: Hyperion CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dotnet:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Restore
+        run: dotnet restore Hyperion.slnx
+      - name: Build
+        run: dotnet build Hyperion.slnx --no-restore --configuration Release
+      - name: Test
+        run: dotnet test Hyperion.slnx --no-build --no-restore --configuration Release
+      - name: Formatting
+        run: dotnet format Hyperion.slnx --verify-no-changes --no-restore --exclude public
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: tools/hyperion-model/pyproject.toml
+      - name: Install test dependencies
+        working-directory: tools/hyperion-model
+        run: python -m pip install -e ".[auth,promote]" pytest ruff jsonschema
+      - name: Test
+        working-directory: tools/hyperion-model
+        run: python -m pytest -q
+      - name: Lint and format
+        working-directory: tools/hyperion-model
+        run: |
+          python -m ruff check .
+          python -m ruff format --check .
+      - name: Compile and discover CLI
+        working-directory: tools/hyperion-model
+        run: |
+          python -m compileall -q vibe_quant_model
+          python -m vibe_quant_model --help

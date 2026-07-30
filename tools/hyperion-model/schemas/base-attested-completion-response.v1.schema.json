@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/base-attested-completion-response.v1.schema.json",
+  "title": "Vibe Quant atomic attested raw-base completion response v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "completion", "runtimeAttestation"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.base-attested-completion-response/v1"},
+    "completion": {"$ref": "#/$defs/completion"},
+    "runtimeAttestation": {"$ref": "base-runtime-attestation-envelope.v1.schema.json"}
+  },
+  "$defs": {
+    "completion": {
+      "type": "object",
+      "required": ["model", "choices", "usage"],
+      "properties": {
+        "model": {"type": "string", "minLength": 1},
+        "choices": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["message", "finish_reason"],
+            "properties": {
+              "message": {
+                "type": "object",
+                "required": ["role", "content"],
+                "properties": {
+                  "role": {"const": "assistant"},
+                  "content": {"type": ["string", "null"]}
+                }
+              },
+              "finish_reason": {"enum": ["stop", "length", "content_filter", "tool_calls"]}
+            }
+          }
+        },
+        "usage": {
+          "type": "object",
+          "required": ["prompt_tokens", "completion_tokens", "total_tokens"],
+          "properties": {
+            "prompt_tokens": {"type": "integer", "minimum": 0},
+            "completion_tokens": {"type": "integer", "minimum": 0},
+            "total_tokens": {"type": "integer", "minimum": 0}
+          }
+        }
+      }
+    }
+  }
+}

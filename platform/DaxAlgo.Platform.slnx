@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="src/DaxAlgo.Platform.Api/DaxAlgo.Platform.Api.csproj" />
+  <Project Path="src/DaxAlgo.Platform.SignalWorker/DaxAlgo.Platform.SignalWorker.csproj" />
+  <Project Path="src/DaxAlgo.Platform.VerifierWorker/DaxAlgo.Platform.VerifierWorker.csproj" />
+  <Project Path="tests/DaxAlgo.Platform.Api.Tests/DaxAlgo.Platform.Api.Tests.csproj" />
+  <Project Path="tests/DaxAlgo.Platform.VerifierWorker.Tests/DaxAlgo.Platform.VerifierWorker.Tests.csproj" />
+</Solution>

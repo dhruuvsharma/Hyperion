@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>DaxAlgo.Platform.Api.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.9" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/DaxAlgo.Platform.Api/DaxAlgo.Platform.Api.csproj" />
+    <ProjectReference Include="../../src/DaxAlgo.Platform.SignalWorker/DaxAlgo.Platform.SignalWorker.csproj" />
+    <ProjectReference Include="../../../src/windows/AI/DaxAlgo.Daxq.Contracts/DaxAlgo.Daxq.Contracts.csproj" />
+    <ProjectReference Include="../../../src/windows/AI/DaxAlgo.Daxq.Vm/DaxAlgo.Daxq.Vm.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../src/DaxAlgo.Platform.Api/Persistence/schema.sql"
+          Link="Fixtures/platform-schema.sql"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../public/tests/TradingTerminal.Tests.Headless/Accounts/Fixtures/entitlement-lease-v1.json"
+          Link="Fixtures/entitlement-lease-v1.json"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/executable-verifier.v1.schema.json",
+  "title": "Vibe Quant closed declarative executable verifier v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "verifierId", "taskId", "profile", "checks"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.executable-verifier/v1"},
+    "verifierId": {"$ref": "#/$defs/id"},
+    "taskId": {"$ref": "#/$defs/id"},
+    "profile": {"const": "declarative-output/v1"},
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "oneOf": [
+          {"$ref": "#/$defs/textCheck"},
+          {"$ref": "#/$defs/sha256Check"},
+          {"$ref": "#/$defs/jsonStringCheck"},
+          {"$ref": "#/$defs/jsonBooleanCheck"},
+          {"$ref": "#/$defs/jsonNullCheck"},
+          {"$ref": "#/$defs/jsonObjectExactKeysCheck"},
+          {"$ref": "#/$defs/jsonDecimalCheck"}
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "pointer": {
+      "type": "string",
+      "maxLength": 1024,
+      "pattern": "^(?:/(?:[^~/]|~[01])*){0,64}$"
+    },
+    "decimal": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"
+    },
+    "nonnegativeDecimal": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"
+    },
+    "relativeTolerance": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^(0(\\.[0-9]+)?|1(\\.0+)?)$"
+    },
+    "textCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkId", "kind", "value"],
+      "properties": {
+        "checkId": {"$ref": "#/$defs/id"},
+        "kind": {"enum": ["contains", "not-contains", "equals"]},
+        "value": {"type": "string", "minLength": 1, "maxLength": 32000, "pattern": "\\S"}
+      }
+    },
+    "sha256Check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkId", "kind", "value"],
+      "properties": {
+        "checkId": {"$ref": "#/$defs/id"},
+        "kind": {"const": "sha256"},
+        "value": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "jsonStringCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkId", "kind", "pointer", "value"],
+      "properties": {
+        "checkId": {"$ref": "#/$defs/id"},
+        "kind": {"const": "json-string-equals"},
+        "pointer": {"$ref": "#/$defs/pointer"},
+        "value": {"type": "string", "minLength": 1, "maxLength": 32000, "pattern": "\\S"}
+      }
+    },
+    "jsonBooleanCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkId", "kind", "pointer", "value"],
+      "properties": {
+        "checkId": {"$ref": "#/$defs/id"},
+        "kind": {"const": "json-boolean-equals"},
+        "pointer": {"$ref": "#/$defs/pointer"},
+        "value": {"type": "boolean"}
+      }
+    },
+    "jsonNullCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkId", "kind", "pointer"],
+      "properties": {
+        "checkId": {"$ref": "#/$defs/id"},
+        "kind": {"const": "json-null"},
+        "pointer": {"$ref": "#/$defs/pointer"}
+      }
+    },
+    "jsonObjectExactKeysCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkId", "kind", "pointer", "keys"],
+      "properties": {
+        "checkId": {"$ref": "#/$defs/id"},
+        "kind": {"const": "json-object-exact-keys"},
+        "pointer": {"$ref": "#/$defs/pointer"},
+        "keys": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 200}
+        }
+      }
+    },
+    "jsonDecimalCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkId", "kind", "pointer", "expected", "absoluteTolerance", "relativeTolerance"],
+      "properties": {
+        "checkId": {"$ref": "#/$defs/id"},
+        "kind": {"const": "json-decimal-close"},
+        "pointer": {"$ref": "#/$defs/pointer"},
+        "expected": {"$ref": "#/$defs/decimal"},
+        "absoluteTolerance": {"$ref": "#/$defs/nonnegativeDecimal"},
+        "relativeTolerance": {"$ref": "#/$defs/relativeTolerance"}
+      }
+    }
+  }
+}

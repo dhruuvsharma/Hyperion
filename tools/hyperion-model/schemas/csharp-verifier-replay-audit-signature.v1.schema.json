@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/csharp-verifier-replay-audit-signature.v1.schema.json",
+  "title": "DaxAlgo detached C# verifier replay-audit signature v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "signatureId", "signingBundleId", "signingBundleSha256", "auditId", "payloadSha256", "unsignedEnvelopeSha256", "signatureInputSha256", "publicKeySpkiSha256", "mode", "format", "signature"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.csharp-verifier-replay-audit-signature/v1"},
+    "signatureId": {"type": "string", "pattern": "^daxalgo-csharp-verifier-replay-audit-signature-sha256-[0-9a-f]{64}$"},
+    "signingBundleId": {"type": "string", "pattern": "^daxalgo-csharp-verifier-replay-audit-signing-bundle-sha256-[0-9a-f]{64}$"},
+    "signingBundleSha256": {"$ref": "#/$defs/sha256"},
+    "auditId": {"type": "string", "pattern": "^daxalgo-csharp-verifier-replay-audit-sha256-[0-9a-f]{64}$"},
+    "payloadSha256": {"$ref": "#/$defs/sha256"},
+    "unsignedEnvelopeSha256": {"$ref": "#/$defs/sha256"},
+    "signatureInputSha256": {"$ref": "#/$defs/sha256"},
+    "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+    "mode": {"enum": ["raw-message", "sha256-digest"]},
+    "format": {"enum": ["asn1-der", "ieee-p1363-fixed-64"]},
+    "signature": {"type": "string", "minLength": 1, "maxLength": 107, "pattern": "^[A-Za-z0-9_-]+$"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"format": {"const": "ieee-p1363-fixed-64"}}, "required": ["format"]},
+      "then": {"properties": {"signature": {"minLength": 86, "maxLength": 86}}}
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

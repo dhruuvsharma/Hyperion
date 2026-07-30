@@ -1,0 +1,33 @@
+; DAXQ v1 / VM ABI 3 / canonical identity maps
+; Constants: cp0=i64 1 (Ema/Long), cp1=i64 12, cp2=i64 4 (Close), cp3=i64 26,
+;            cp4=f64 1.0, cp5=i64 0 (no note), cp6=i64 -1 (Short)
+; Entrypoint: OnBar(barIndex), locals=2, stateSlots=0
+
+0000  020000      PUSH_I64 0
+0003  020100      PUSH_I64 1
+0006  020200      PUSH_I64 2
+0009  21020003    CALL_HOST Ind, 3
+000d  050000      ST_LOC 0
+0010  020000      PUSH_I64 0
+0013  020300      PUSH_I64 3
+0016  020200      PUSH_I64 2
+0019  21020003    CALL_HOST Ind, 3
+001d  050100      ST_LOC 1
+0020  040000      LD_LOC 0
+0023  040100      LD_LOC 1
+0026  11          CGT
+0027  1a12000000  BRF +18 -> 003e
+002c  020000      PUSH_I64 0
+002f  010400      PUSH_F64 4
+0032  020500      PUSH_I64 5
+0035  21040003    CALL_HOST Emit, 3
+0039  1819000000  BR +25 -> 0057
+003e  040000      LD_LOC 0
+0041  040100      LD_LOC 1
+0044  0f          CLT
+0045  1a0d000000  BRF +13 -> 0057
+004a  020600      PUSH_I64 6
+004d  010400      PUSH_F64 4
+0050  020500      PUSH_I64 5
+0053  21040003    CALL_HOST Emit, 3
+0057  22          RET

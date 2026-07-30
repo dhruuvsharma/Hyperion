@@ -1,0 +1,28 @@
+<Solution>
+  <Folder Name="/Hyperion/">
+    <Project Path="src/windows/AI/TradingTerminal.Ai.Coordinator.Contracts/TradingTerminal.Ai.Coordinator.Contracts.csproj" />
+    <Project Path="src/windows/AI/TradingTerminal.Ai.Coordinator/TradingTerminal.Ai.Coordinator.csproj" />
+    <Project Path="src/windows/AI/TradingTerminal.Ai.Coordinator.Client/TradingTerminal.Ai.Coordinator.Client.csproj" />
+    <Project Path="src/windows/Tools/DaxAlgo.Coordinator.Cli/DaxAlgo.Coordinator.Cli.csproj" />
+  </Folder>
+  <Folder Name="/Verifier dependencies/">
+    <Project Path="src/windows/AI/DaxAlgo.Daxq.Contracts/DaxAlgo.Daxq.Contracts.csproj" />
+    <Project Path="src/windows/AI/DaxAlgo.Daxq.Vm/DaxAlgo.Daxq.Vm.csproj" />
+    <Project Path="src/windows/Tools/DaxAlgo.Daxq.Compiler/DaxAlgo.Daxq.Compiler.csproj" />
+    <Project Path="public/src/windows/Core/TradingTerminal.Core/TradingTerminal.Core.csproj" />
+    <Project Path="public/src/windows/Sdk/DaxAlgo.Sdk/DaxAlgo.Sdk.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="tests/TradingTerminal.Tests.Pro.Headless/TradingTerminal.Tests.Pro.Headless.csproj" />
+    <Project Path="tests/DaxAlgo.Daxq.Contracts.Tests/DaxAlgo.Daxq.Contracts.Tests.csproj" />
+    <Project Path="tests/DaxAlgo.Daxq.Vm.Tests/DaxAlgo.Daxq.Vm.Tests.csproj" />
+    <Project Path="tests/DaxAlgo.Daxq.Compiler.Tests/DaxAlgo.Daxq.Compiler.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Hosted platform/">
+    <Project Path="platform/src/DaxAlgo.Platform.Api/DaxAlgo.Platform.Api.csproj" />
+    <Project Path="platform/src/DaxAlgo.Platform.SignalWorker/DaxAlgo.Platform.SignalWorker.csproj" />
+    <Project Path="platform/src/DaxAlgo.Platform.VerifierWorker/DaxAlgo.Platform.VerifierWorker.csproj" />
+    <Project Path="platform/tests/DaxAlgo.Platform.Api.Tests/DaxAlgo.Platform.Api.Tests.csproj" />
+    <Project Path="platform/tests/DaxAlgo.Platform.VerifierWorker.Tests/DaxAlgo.Platform.VerifierWorker.Tests.csproj" />
+  </Folder>
+</Solution>

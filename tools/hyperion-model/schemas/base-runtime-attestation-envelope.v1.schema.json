@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/base-runtime-attestation-envelope.v1.schema.json",
+  "title": "Vibe Quant signed raw-base runtime attestation envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "payloadEncoding", "algorithm", "signatureFormat", "publicKeySpkiSha256", "payload", "signature"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.base-runtime-attestation-envelope/v1"},
+    "payloadEncoding": {"const": "canonical-json-base64url"},
+    "algorithm": {"const": "ES256"},
+    "signatureFormat": {"const": "ieee-p1363-fixed-64-low-s"},
+    "publicKeySpkiSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "payload": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
+    "signature": {"type": "string", "pattern": "^[A-Za-z0-9_-]{86}$"}
+  }
+}

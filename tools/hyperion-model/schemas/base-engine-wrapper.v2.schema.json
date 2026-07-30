@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/base-engine-wrapper.v2.schema.json",
+  "title": "Vibe Quant owned raw-base engine wrapper v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "target", "activation", "runtimeSigning", "engine", "service"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.base-engine-wrapper/v2"},
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profilePath", "snapshotManifestPath", "snapshotPath", "catalogPath", "sourceLockPath", "expectedProfileSha256"],
+      "properties": {
+        "profilePath": {"$ref": "#/$defs/path"},
+        "snapshotManifestPath": {"$ref": "#/$defs/path"},
+        "snapshotPath": {"$ref": "#/$defs/path"},
+        "catalogPath": {"$ref": "#/$defs/path"},
+        "sourceLockPath": {"$ref": "#/$defs/path"},
+        "expectedProfileSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "activation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "publicKeyPath", "publicKeySpkiSha256", "audience", "keyId", "signerRole"],
+      "properties": {
+        "path": {"$ref": "#/$defs/path"},
+        "publicKeyPath": {"$ref": "#/$defs/path"},
+        "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+        "audience": {"$ref": "#/$defs/id"},
+        "keyId": {"$ref": "#/$defs/id"},
+        "signerRole": {"$ref": "#/$defs/id"}
+      }
+    },
+    "runtimeSigning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "signerEndpoint", "signerTlsCertificatePath", "signerTlsCertificateSha256", "signerBearerTokenEnvironment", "providerKeyReference", "requestTimeoutSeconds", "maxResponseBytes", "signatureFormat", "publicKeyPath", "publicKeySpkiSha256", "audience", "keyId", "signerRole", "receiptTtlSeconds"],
+      "properties": {
+        "provider": {"const": "external-loopback-https/v1"},
+        "signerEndpoint": {
+          "type": "string",
+          "maxLength": 2000,
+          "pattern": "^https://127\\.0\\.0\\.1:(?:[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])/v1/daxalgo/base-runtime-signatures$"
+        },
+        "signerTlsCertificatePath": {"$ref": "#/$defs/path"},
+        "signerTlsCertificateSha256": {"$ref": "#/$defs/sha256"},
+        "signerBearerTokenEnvironment": {"$ref": "#/$defs/environmentName"},
+        "providerKeyReference": {"type": "string", "minLength": 1, "maxLength": 1000, "pattern": "^[^\\u0000-\\u001F\\u007F]+$"},
+        "requestTimeoutSeconds": {"type": "number", "minimum": 0.1, "maximum": 30},
+        "maxResponseBytes": {"type": "integer", "minimum": 512, "maximum": 65536},
+        "signatureFormat": {"enum": ["asn1-der", "ieee-p1363-fixed-64"]},
+        "publicKeyPath": {"$ref": "#/$defs/path"},
+        "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+        "audience": {"$ref": "#/$defs/id"},
+        "keyId": {"$ref": "#/$defs/id"},
+        "signerRole": {"$ref": "#/$defs/id"},
+        "receiptTtlSeconds": {"type": "integer", "minimum": 1, "maximum": 300}
+      }
+    },
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executablePath", "executableSha256", "containerImageDigestEnvironment", "childHost", "childPort", "childUserId", "childGroupId", "startupTimeoutSeconds", "healthIntervalSeconds", "integrityIntervalSeconds", "requestTimeoutSeconds", "shutdownGraceSeconds", "environmentAllowlist"],
+      "properties": {
+        "executablePath": {"$ref": "#/$defs/path"},
+        "executableSha256": {"$ref": "#/$defs/sha256"},
+        "containerImageDigestEnvironment": {"$ref": "#/$defs/environmentName"},
+        "childHost": {"const": "127.0.0.1"},
+        "childPort": {"type": "integer", "minimum": 1, "maximum": 65535},
+        "childUserId": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+        "childGroupId": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+        "startupTimeoutSeconds": {"type": "number", "minimum": 1, "maximum": 3600},
+        "healthIntervalSeconds": {"type": "number", "minimum": 0.1, "maximum": 60},
+        "integrityIntervalSeconds": {"type": "number", "minimum": 1, "maximum": 3600},
+        "requestTimeoutSeconds": {"type": "number", "minimum": 0.1, "maximum": 3600},
+        "shutdownGraceSeconds": {"type": "number", "minimum": 0, "maximum": 60},
+        "environmentAllowlist": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/childEnvironmentName"}
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["listenHost", "listenPort", "bearerTokenEnvironment", "maxRequestBytes", "maxResponseBytes", "maxAttestations"],
+      "properties": {
+        "listenHost": {"const": "127.0.0.1"},
+        "listenPort": {"type": "integer", "minimum": 1, "maximum": 65535},
+        "bearerTokenEnvironment": {"$ref": "#/$defs/environmentName"},
+        "maxRequestBytes": {"type": "integer", "minimum": 1024, "maximum": 8000000},
+        "maxResponseBytes": {"type": "integer", "minimum": 1024, "maximum": 16000000},
+        "maxAttestations": {"type": "integer", "minimum": 1, "maximum": 1000000}
+      }
+    }
+  },
+  "$defs": {
+    "path": {"type": "string", "minLength": 1, "maxLength": 2000},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "id": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},
+    "environmentName": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"},
+    "childEnvironmentName": {
+      "enum": ["CUDA_DEVICE_ORDER", "CUDA_VISIBLE_DEVICES", "HF_HOME", "HF_HUB_CACHE", "LANG", "LC_ALL", "NCCL_DEBUG", "NCCL_IB_DISABLE", "NCCL_P2P_DISABLE", "NVIDIA_DRIVER_CAPABILITIES", "NVIDIA_VISIBLE_DEVICES", "OMP_NUM_THREADS", "PATH", "SYSTEMROOT", "TEMP", "TMP", "TMPDIR", "TOKENIZERS_PARALLELISM", "TORCH_HOME", "TRANSFORMERS_CACHE", "WINDIR"]
+    }
+  }
+}

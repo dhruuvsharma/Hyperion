@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/csharp-strategy-verification-request.v1.schema.json",
+  "title": "DaxAlgo headless C# strategy verification request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "profile", "requestId", "sourceSha256", "contract", "cases"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.verifier.headless-strategy-request/v1"},
+    "profile": {"const": "daxalgo-sdk-headless-source/v1"},
+    "requestId": {"$ref": "#/$defs/id"},
+    "sourceSha256": {"$ref": "#/$defs/sha256"},
+    "contract": {"$ref": "#/$defs/contract"},
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {"$ref": "#/$defs/case"}
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "boundedText64": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+    },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "secType", "exchange", "currency", "primaryExchange"],
+      "properties": {
+        "symbol": {"$ref": "#/$defs/boundedText64"},
+        "secType": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "exchange": {"$ref": "#/$defs/boundedText64"},
+        "currency": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "primaryExchange": {"$ref": "#/$defs/boundedText64"}
+      }
+    },
+    "tick": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["offsetMilliseconds", "bid", "ask", "bidSize", "askSize"],
+      "properties": {
+        "offsetMilliseconds": {"type": "integer", "minimum": 0, "maximum": 604800000},
+        "bid": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000000000000},
+        "ask": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000000000000},
+        "bidSize": {"type": "integer", "minimum": 0, "maximum": 1000000000000},
+        "askSize": {"type": "integer", "minimum": 0, "maximum": 1000000000000}
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caseId", "startUtc", "ticks"],
+      "properties": {
+        "caseId": {"$ref": "#/$defs/id"},
+        "startUtc": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 40,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,7})?Z$"
+        },
+        "ticks": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2048,
+          "items": {"$ref": "#/$defs/tick"}
+        }
+      }
+    }
+  }
+}

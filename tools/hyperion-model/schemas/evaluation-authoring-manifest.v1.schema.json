@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/evaluation-authoring-manifest.v1.schema.json",
+  "title": "DaxAlgo evaluation-authoring manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sourceDatasetSha256", "tasks"],
+  "properties": {
+    "schemaVersion": {
+      "const": "daxalgo.vibe-quant.evaluation-authoring-manifest/v1"
+    },
+    "sourceDatasetSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 10000,
+      "items": {
+        "$ref": "#/$defs/task"
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*)*$"
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "sha256"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "taskId",
+        "sourceExampleId",
+        "contextPack",
+        "rubric",
+        "verifier",
+        "criticality",
+        "maxOutputTokens"
+      ],
+      "properties": {
+        "taskId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "sourceExampleId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "contextPack": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["version", "path", "sha256"],
+          "properties": {
+            "version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "path": {
+              "$ref": "#/$defs/relativePath"
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        },
+        "rubric": {
+          "$ref": "#/$defs/asset"
+        },
+        "verifier": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "path", "sha256", "requiredChecks"],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "path": {
+              "$ref": "#/$defs/relativePath"
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "requiredChecks": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 128,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/identifier"
+              }
+            }
+          }
+        },
+        "criticality": {
+          "enum": ["standard", "critical"]
+        },
+        "maxOutputTokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 262144
+        }
+      }
+    }
+  }
+}

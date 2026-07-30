@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/csharp-verifier-authority.v2.schema.json",
+  "title": "Vibe Quant signed C# verifier authority payload v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "authorityId", "decision", "scope", "reusable",
+    "reviewAuthorized", "releaseAuthorized", "trainingAuthorized",
+    "promotionAuthorized", "deploymentAuthorized", "hostedAuthorized",
+    "installationAuthorized", "issuedAtUtc", "notBeforeUtc", "expiresAtUtc",
+    "verifier", "approval", "statement"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.csharp-verifier-authority/v2"},
+    "authorityId": {
+      "type": "string",
+      "pattern": "^daxalgo-csharp-verifier-authority-sha256-[0-9a-f]{64}$"
+    },
+    "decision": {"const": "approved"},
+    "scope": {"const": "standalone-research-evidence-only"},
+    "reusable": {"const": true},
+    "reviewAuthorized": {"const": false},
+    "releaseAuthorized": {"const": false},
+    "trainingAuthorized": {"const": false},
+    "promotionAuthorized": {"const": false},
+    "deploymentAuthorized": {"const": false},
+    "hostedAuthorized": {"const": false},
+    "installationAuthorized": {"const": false},
+    "issuedAtUtc": {"$ref": "#/$defs/utc"},
+    "notBeforeUtc": {"$ref": "#/$defs/utc"},
+    "expiresAtUtc": {"$ref": "#/$defs/utc"},
+    "verifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["image", "dockerRuntime", "platform", "entrypoint", "protocol", "toolchain", "toolchainSha256", "sandboxPolicy"],
+      "properties": {
+        "image": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reference", "digest", "imageId"],
+          "properties": {
+            "reference": {
+              "type": "string",
+              "minLength": 73,
+              "maxLength": 500,
+              "pattern": "^[a-z0-9][a-z0-9._:/-]*@sha256:[0-9a-f]{64}$"
+            },
+            "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+            "imageId": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+          }
+        },
+        "dockerRuntime": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["client", "daemonEndpoint", "environmentPolicy"],
+          "properties": {
+            "client": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "sha256", "sizeBytes"],
+              "properties": {
+                "path": {"type": "string", "minLength": 3, "maxLength": 1024, "pattern": "^(?:[A-Za-z]:\\\\|/).+"},
+                "sha256": {"$ref": "#/$defs/sha256"},
+                "sizeBytes": {"type": "integer", "minimum": 1, "maximum": 268435456}
+              }
+            },
+            "daemonEndpoint": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500,
+              "pattern": "^(?:npipe:////\\./pipe/[A-Za-z0-9][A-Za-z0-9._-]{0,127}|unix:///[^?#]+)$"
+            },
+            "environmentPolicy": {"const": "daxalgo.verifier.scrubbed-docker-client-environment/v1"}
+          }
+        },
+        "platform": {"const": "linux/amd64"},
+        "entrypoint": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 500,
+          "pattern": "^/(?:[A-Za-z0-9._-]+/)*[A-Za-z0-9._-]+$"
+        },
+        "protocol": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requestSchemaVersion", "sourceProfile", "workerResultSchemaVersion", "verificationResultSchemaVersion"],
+          "properties": {
+            "requestSchemaVersion": {"const": "daxalgo.verifier.headless-strategy-request/v1"},
+            "sourceProfile": {"const": "daxalgo-sdk-headless-source/v1"},
+            "workerResultSchemaVersion": {"const": "daxalgo.verifier.headless-strategy-worker-result/v1"},
+            "verificationResultSchemaVersion": {"const": "daxalgo.vibe-quant.csharp-strategy-verification-result/v2"}
+          }
+        },
+        "toolchain": {"$ref": "#/$defs/toolchain"},
+        "toolchainSha256": {"$ref": "#/$defs/sha256"},
+        "sandboxPolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["profile", "sha256", "policy"],
+          "properties": {
+            "profile": {"const": "daxalgo.verifier.docker-sandbox-policy/v1"},
+            "sha256": {"$ref": "#/$defs/sha256"},
+            "policy": {"$ref": "#/$defs/sandboxPolicy"}
+          }
+        }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approvalId", "actorId", "actorRole", "reference", "approvedAtUtc"],
+      "properties": {
+        "approvalId": {"$ref": "#/$defs/id"},
+        "actorId": {"$ref": "#/$defs/id"},
+        "actorRole": {"$ref": "#/$defs/id"},
+        "reference": {"type": "string", "minLength": 1, "maxLength": 500},
+        "approvedAtUtc": {"$ref": "#/$defs/utc"}
+      }
+    },
+    "statement": {
+      "const": "This bounded reusable lease authorizes only standalone research verification; it grants no review, release, training, promotion, deployment, hosted, installation, compilation-consent, or execution authority outside the isolated verifier."
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "utc": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "sha256"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 256},
+        "version": {"type": "string", "minLength": 1, "maxLength": 128},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "worker", "runtime", "core", "sdk", "roslyn", "compilerClosure", "compilerClosureSha256"],
+      "properties": {
+        "version": {"const": "1.0.0"},
+        "worker": {"$ref": "#/$defs/artifact"},
+        "runtime": {"$ref": "#/$defs/artifact"},
+        "core": {"$ref": "#/$defs/artifact"},
+        "sdk": {"$ref": "#/$defs/artifact"},
+        "roslyn": {"$ref": "#/$defs/artifact"},
+        "compilerClosure": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/artifact"}
+        },
+        "compilerClosureSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "sandboxPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "platform", "entrypoint", "network", "readOnlyRoot", "uid", "gid", "cpus", "memoryBytes", "memorySwapBytes", "pidsLimit", "nofileSoft", "nofileHard", "capDrop", "noNewPrivileges", "seccomp", "environment", "tmpfs"],
+      "properties": {
+        "profile": {"const": "daxalgo.verifier.docker-sandbox-policy/v1"},
+        "platform": {"const": "linux/amd64"},
+        "entrypoint": {"type": "string", "pattern": "^/(?:[A-Za-z0-9._-]+/)*[A-Za-z0-9._-]+$"},
+        "network": {"const": "none"},
+        "readOnlyRoot": {"const": true},
+        "uid": {"const": 65532},
+        "gid": {"const": 65532},
+        "cpus": {"const": 1},
+        "memoryBytes": {"const": 805306368},
+        "memorySwapBytes": {"const": 805306368},
+        "pidsLimit": {"const": 64},
+        "nofileSoft": {"const": 256},
+        "nofileHard": {"const": 256},
+        "capDrop": {"const": ["ALL"]},
+        "noNewPrivileges": {"const": true},
+        "seccomp": {"const": "docker-builtin"},
+        "environment": {"const": ["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"]},
+        "tmpfs": {
+          "const": [
+            {"path": "/tmp", "sizeBytes": 67108864, "options": ["rw", "noexec", "nosuid", "nodev"], "uid": 65532, "gid": 65532, "mode": "0700"},
+            {"path": "/work", "sizeBytes": 268435456, "options": ["rw", "noexec", "nosuid", "nodev"], "uid": 65532, "gid": 65532, "mode": "0700"}
+          ]
+        }
+      }
+    }
+  }
+}

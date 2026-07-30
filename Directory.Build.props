@@ -1,0 +1,62 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-windows7.0</TargetFramework>
+    <UseWPF>false</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- BaseIntermediateOutputPath is redirected to C:\DaxAlgoBuild below, so the SDK's default
+         item-excludes only cover the REDIRECTED obj. A stray LOCAL obj\ (WPF _wpftmp pass, or a build
+         that didn't pick up this props) is therefore NOT excluded, and its generated AssemblyInfo.cs
+         gets compiled alongside the redirected copy -> CS0579 duplicate-attribute. Exclude local
+         obj\/bin\ from the default globs so that can never happen (safe: generated, never real source). -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(MSBuildProjectDirectory)\obj\**;$(MSBuildProjectDirectory)\bin\**</DefaultItemExcludes>
+    <Authors>Hyperion</Authors>
+    <Product>Hyperion</Product>
+    <Copyright>Copyright (c) $([System.DateTime]::UtcNow.Year)</Copyright>
+
+    <!-- Release version (single source of truth). Bump for every release; the git tag
+         the release workflow runs on (e.g. v1.0.0) should match VersionPrefix. -->
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Platforms>AnyCPU</Platforms>
+    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+
+    <!-- Base directory under which the PUBLIC (submodule) projects' bin lives, mirroring the
+         public repo layout. The strategy-plugin staging targets in the App shell resolve strategy
+         DLLs through this. The public/ submodule carries its own Directory.Build.props (nearest
+         props wins), which on Windows redirects its output to
+         $(DaxAlgoBuildRoot)\<checkout-folder-name>\ — the submodule folder is named `public`, so
+         the two definitions line up. Default (non-Windows / in-tree): the submodule root itself. -->
+    <DaxAlgoOutputBase>$(MSBuildThisFileDirectory)public\</DaxAlgoOutputBase>
+  </PropertyGroup>
+
+  <!-- Identity, skipped for WPF's temporary pass-2 project (<Project>_<hash>_wpftmp) — it must keep
+       the ORIGINAL assembly name or XAML that references a type from its own assembly fails with
+       MC3074. Same guard as the public repo's props; the rationale is spelled out there. -->
+  <PropertyGroup Condition="!$(MSBuildProjectName.EndsWith('_wpftmp'))">
+    <RootNamespace>$(MSBuildProjectName)</RootNamespace>
+    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
+  </PropertyGroup>
+
+  <!-- Build-output redirect (Windows dev only) — mirrors the public repo's props; see the
+       rationale there. Pro-only projects key under DaxAlgo-Terminal-Pro\ so they can never
+       collide with a standalone public checkout or the submodule's own output. -->
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <DaxAlgoBuildRoot Condition="'$(DaxAlgoBuildRoot)' == ''">C:\DaxAlgoBuild</DaxAlgoBuildRoot>
+    <_DaxAlgoProjectRel>$([MSBuild]::MakeRelative($(MSBuildThisFileDirectory), $(MSBuildProjectDirectory)))</_DaxAlgoProjectRel>
+    <BaseIntermediateOutputPath>$(DaxAlgoBuildRoot)\Hyperion\$(_DaxAlgoProjectRel)\obj\</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(DaxAlgoBuildRoot)\Hyperion\$(_DaxAlgoProjectRel)\bin\</BaseOutputPath>
+    <DaxAlgoOutputBase>$(DaxAlgoBuildRoot)\public\</DaxAlgoOutputBase>
+  </PropertyGroup>
+
+</Project>

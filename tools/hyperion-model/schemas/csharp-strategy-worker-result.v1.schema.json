@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/csharp-strategy-worker-result.v1.schema.json",
+  "title": "DaxAlgo headless C# strategy worker result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "request", "source", "toolchain", "compile", "policy", "cases", "completed", "accepted"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.verifier.headless-strategy-worker-result/v1"},
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requestId", "sha256", "valid", "diagnostics", "diagnosticsTruncated"],
+      "properties": {
+        "requestId": {"anyOf": [{"$ref": "#/$defs/id"}, {"type": "null"}]},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "valid": {"type": "boolean"},
+        "diagnostics": {"$ref": "#/$defs/diagnostics"},
+        "diagnosticsTruncated": {"type": "boolean"}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "declaredSha256", "encodingValid", "hashMatched"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "declaredSha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "encodingValid": {"type": "boolean"},
+        "hashMatched": {"type": "boolean"}
+      }
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "worker", "runtime", "core", "sdk", "roslyn", "compilerClosure", "compilerClosureSha256"],
+      "properties": {
+        "version": {"const": "1.0.0"},
+        "worker": {"$ref": "#/$defs/artifact"},
+        "runtime": {"$ref": "#/$defs/artifact"},
+        "core": {"$ref": "#/$defs/artifact"},
+        "sdk": {"$ref": "#/$defs/artifact"},
+        "roslyn": {"$ref": "#/$defs/artifact"},
+        "compilerClosure": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {"$ref": "#/$defs/artifact"}
+        },
+        "compilerClosureSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "compile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempted", "succeeded", "assemblySha256", "diagnostics", "diagnosticsTruncated"],
+      "properties": {
+        "attempted": {"type": "boolean"},
+        "succeeded": {"type": "boolean"},
+        "assemblySha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "diagnostics": {"$ref": "#/$defs/diagnostics"},
+        "diagnosticsTruncated": {"type": "boolean"}
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempted", "sourcePassed", "ilPassed", "diagnostics", "diagnosticsTruncated"],
+      "properties": {
+        "attempted": {"type": "boolean"},
+        "sourcePassed": {"type": "boolean"},
+        "ilPassed": {"type": "boolean"},
+        "diagnostics": {"$ref": "#/$defs/diagnostics"},
+        "diagnosticsTruncated": {"type": "boolean"}
+      }
+    },
+    "cases": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {"$ref": "#/$defs/case"}
+    },
+    "completed": {"const": true},
+    "accepted": {"type": "boolean"}
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "sha256"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 256},
+        "version": {"type": "string", "minLength": 1, "maxLength": 128},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {"$ref": "#/$defs/diagnostic"}
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "code", "severity", "message", "line", "column"],
+      "properties": {
+        "stage": {"type": "string", "minLength": 1, "maxLength": 128},
+        "code": {"type": "string", "minLength": 1, "maxLength": 128},
+        "severity": {"enum": ["info", "warning", "error"]},
+        "message": {"type": "string", "minLength": 1, "maxLength": 512},
+        "line": {"anyOf": [{"type": "integer", "minimum": 1}, {"type": "null"}]},
+        "column": {"anyOf": [{"type": "integer", "minimum": 1}, {"type": "null"}]}
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caseId", "succeeded", "trace", "secondTrace", "firstTraceSha256", "secondTraceSha256", "deterministic", "firstError", "secondError"],
+      "properties": {
+        "caseId": {"$ref": "#/$defs/id"},
+        "succeeded": {"type": "boolean"},
+        "trace": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/traceEntry"}},
+        "secondTrace": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/traceEntry"}},
+        "firstTraceSha256": {"$ref": "#/$defs/sha256"},
+        "secondTraceSha256": {"$ref": "#/$defs/sha256"},
+        "deterministic": {"type": "boolean"},
+        "firstError": {"anyOf": [{"$ref": "#/$defs/runtimeError"}, {"type": "null"}]},
+        "secondError": {"anyOf": [{"$ref": "#/$defs/runtimeError"}, {"type": "null"}]}
+      }
+    },
+    "traceEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sequence", "kind", "atUtc", "clientOrderId", "contract", "side", "type", "quantity", "limitPrice", "stopPrice", "timeInForce"],
+      "properties": {
+        "sequence": {"type": "integer", "minimum": 1, "maximum": 64},
+        "kind": {"enum": ["place", "cancel"]},
+        "atUtc": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,7})?Z$"},
+        "clientOrderId": {"type": "string", "minLength": 1, "maxLength": 256},
+        "contract": {"anyOf": [{"$ref": "#/$defs/contract"}, {"type": "null"}]},
+        "side": {"anyOf": [{"enum": ["Buy", "Sell"]}, {"type": "null"}]},
+        "type": {"anyOf": [{"enum": ["Market", "Limit", "Stop", "StopLimit"]}, {"type": "null"}]},
+        "quantity": {"anyOf": [{"type": "integer", "minimum": 1, "maximum": 1000000000000}, {"type": "null"}]},
+        "limitPrice": {"anyOf": [{"type": "number", "minimum": -1000000000000, "maximum": 1000000000000}, {"type": "null"}]},
+        "stopPrice": {"anyOf": [{"type": "number", "minimum": -1000000000000, "maximum": 1000000000000}, {"type": "null"}]},
+        "timeInForce": {"anyOf": [{"enum": ["Day", "Gtc", "Ioc", "Fok"]}, {"type": "null"}]}
+      }
+    },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "secType", "exchange", "currency", "primaryExchange"],
+      "properties": {
+        "symbol": {"type": "string", "minLength": 1, "maxLength": 64},
+        "secType": {"type": "string", "minLength": 1, "maxLength": 32},
+        "exchange": {"type": "string", "minLength": 1, "maxLength": 64},
+        "currency": {"type": "string", "minLength": 1, "maxLength": 16},
+        "primaryExchange": {"type": "string", "minLength": 1, "maxLength": 64}
+      }
+    },
+    "runtimeError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "type", "message"],
+      "properties": {
+        "code": {"type": "string", "minLength": 1, "maxLength": 64},
+        "type": {"type": "string", "minLength": 1, "maxLength": 256},
+        "message": {"type": "string", "minLength": 1, "maxLength": 512}
+      }
+    }
+  }
+}

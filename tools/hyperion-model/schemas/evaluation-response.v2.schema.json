@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/evaluation-response.v2.schema.json",
+  "title": "Vibe Quant attested raw-base evaluation response v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "responseSha256", "candidateCatalogSha256", "candidateId", "modelId", "modelRevision", "servingProfile", "targetKind", "executionModelId", "runId", "dataRelease", "researchOnly", "evidenceStatus", "taskId", "taskSha256", "promptSha256", "output", "generation", "latencyMs", "usage", "finishReason", "capturedAtUtc", "runtimeAttestation"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.evaluation-response/v2"},
+    "responseSha256": {"$ref": "#/$defs/sha256"},
+    "candidateCatalogSha256": {"$ref": "#/$defs/sha256"},
+    "candidateId": {"$ref": "#/$defs/id"},
+    "modelId": {"type": "string", "minLength": 1},
+    "modelRevision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "servingProfile": {"type": "object", "additionalProperties": false, "required": ["id", "sha256"], "properties": {"id": {"$ref": "#/$defs/id"}, "sha256": {"$ref": "#/$defs/sha256"}}},
+    "targetKind": {"const": "raw-base"},
+    "executionModelId": {"type": "string", "pattern": "^daxalgo-base-sha256-[0-9a-f]{64}$"},
+    "runId": {"$ref": "#/$defs/id"},
+    "dataRelease": {"$ref": "#/$defs/releaseIdentity"},
+    "researchOnly": {"const": false},
+    "evidenceStatus": {"const": "release-bound"},
+    "taskId": {"$ref": "#/$defs/id"},
+    "taskSha256": {"$ref": "#/$defs/sha256"},
+    "promptSha256": {"$ref": "#/$defs/sha256"},
+    "output": {"type": "object", "additionalProperties": false, "required": ["text", "sha256", "byteCount"], "properties": {"text": {"type": "string", "maxLength": 2000000}, "sha256": {"$ref": "#/$defs/sha256"}, "byteCount": {"type": "integer", "minimum": 0, "maximum": 2000000}}},
+    "generation": {"type": "object", "additionalProperties": false, "required": ["temperature", "topP", "seed", "maxOutputTokens"], "properties": {"temperature": {"const": 0}, "topP": {"const": 1}, "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647}, "maxOutputTokens": {"type": "integer", "minimum": 1, "maximum": 262144}}},
+    "latencyMs": {"type": "integer", "minimum": 0},
+    "usage": {"type": "object", "additionalProperties": false, "required": ["promptTokens", "completionTokens", "totalTokens"], "properties": {"promptTokens": {"type": "integer", "minimum": 0}, "completionTokens": {"type": "integer", "minimum": 0}, "totalTokens": {"type": "integer", "minimum": 0}}},
+    "finishReason": {"enum": ["stop", "length", "content_filter", "tool_calls"]},
+    "capturedAtUtc": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "runtimeAttestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["activation", "receipt", "completion"],
+      "properties": {
+        "activation": {"$ref": "base-engine-activation-envelope.v1.schema.json"},
+        "receipt": {"$ref": "base-runtime-attestation-envelope.v1.schema.json"},
+        "completion": {"$ref": "base-attested-completion-response.v1.schema.json#/$defs/completion"}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"finishReason": {"const": "stop"}}},
+      "then": {"properties": {"output": {"properties": {"text": {"minLength": 1}}}}}
+    }
+  ],
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "releaseIdentity": {"type": "object", "additionalProperties": false, "required": ["releaseId", "releaseSha256", "manifestSha256"], "properties": {"releaseId": {"type": "string", "pattern": "^vqrel-[0-9a-f]{64}$"}, "releaseSha256": {"$ref": "#/$defs/sha256"}, "manifestSha256": {"$ref": "#/$defs/sha256"}}}
+  }
+}

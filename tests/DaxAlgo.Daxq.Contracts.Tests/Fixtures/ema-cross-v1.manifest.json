@@ -1,0 +1,27 @@
+{
+  "formatVersion": 1,
+  "kind": "daxq",
+  "strategyId": "example.ema-cross",
+  "version": "1.0.0",
+  "sdkAbiVersion": 3,
+  "executionClass": "sealed_bytecode",
+  "dataRequirements": [
+    "bars"
+  ],
+  "params": [],
+  "protection": {
+    "alg": "AES-256-GCM",
+    "contentKeyId": "ck_example.ema-cross_1.0.0",
+    "nonce": "AAECAwQFBgcICQoL",
+    "cipherSha256": "5faa7d939a431e1f80e582f7dc39f29e7e378eeff4566d3b44e2f5146dcb2531"
+  },
+  "watermark": {
+    "scheme": "per-buyer-v1",
+    "slot": "wm"
+  },
+  "vmMin": 3,
+  "files": {
+    "manifest.json": "self",
+    "strategy.dqx": "5faa7d939a431e1f80e582f7dc39f29e7e378eeff4566d3b44e2f5146dcb2531"
+  }
+}

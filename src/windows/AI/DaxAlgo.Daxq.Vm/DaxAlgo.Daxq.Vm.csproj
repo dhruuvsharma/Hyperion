@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DaxAlgo.Daxq.Contracts\DaxAlgo.Daxq.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DaxAlgo.Daxq.Host" />
+    <InternalsVisibleTo Include="DaxAlgo.Daxq.Vm.Tests" />
+  </ItemGroup>
+
+</Project>

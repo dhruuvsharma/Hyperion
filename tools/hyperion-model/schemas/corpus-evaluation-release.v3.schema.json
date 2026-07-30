@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/corpus-evaluation-release.v3.schema.json",
+  "title": "Vibe Quant authenticated corpus and evaluation release v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "releaseId", "releaseSha256", "purpose", "cutoffUtc", "rightsPolicy", "corpus", "evaluation", "approval"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.corpus-evaluation-release/v3"},
+    "releaseId": {"type": "string", "pattern": "^vqrel-[0-9a-f]{64}$"},
+    "releaseSha256": {"$ref": "#/$defs/sha256"},
+    "purpose": {"enum": ["local-evaluation", "provider-evaluation", "local-training-evaluation", "provider-training-evaluation"]},
+    "cutoffUtc": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "rightsPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requireStorage", "requireEvaluation", "requireTrainingForSft", "requireProviderUploadForReleasedContent", "requireRedistribution"],
+      "properties": {
+        "requireStorage": {"const": true},
+        "requireEvaluation": {"const": true},
+        "requireTrainingForSft": {"type": "boolean"},
+        "requireProviderUploadForReleasedContent": {"type": "boolean"},
+        "requireRedistribution": {"const": false}
+      }
+    },
+    "corpus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceDataset", "reviewReceipts", "sft"],
+      "properties": {
+        "sourceDataset": {"$ref": "#/$defs/corpusFile"},
+        "reviewReceipts": {"$ref": "#/$defs/reviewReceiptFile"},
+        "sft": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/sftFile"}]}
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["calibrationTasks", "sealedTasks", "taskBindings", "authoringApproval"],
+      "properties": {
+        "calibrationTasks": {"$ref": "#/$defs/taskFile"},
+        "sealedTasks": {"$ref": "#/$defs/taskFile"},
+        "taskBindings": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/taskBinding"}},
+        "authoringApproval": {"$ref": "#/$defs/evaluationAuthoringApprovalFile"}
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "declarativeOnly", "approvalId", "reviewerId", "approvedAtUtc", "evidence"],
+      "properties": {
+        "status": {"const": "approved"},
+        "declarativeOnly": {"const": true},
+        "approvalId": {"$ref": "#/$defs/id"},
+        "reviewerId": {"$ref": "#/$defs/id"},
+        "approvedAtUtc": {"type": "string", "format": "date-time", "pattern": "Z$"},
+        "evidence": {"$ref": "#/$defs/file"}
+      }
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "utcSecond": {"type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"},
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1, "maxLength": 500},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "corpusFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes", "recordCount"],
+      "properties": {
+        "path": {"const": "corpus/expert-dataset.jsonl"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1},
+        "recordCount": {"type": "integer", "minimum": 1, "maximum": 100000}
+      }
+    },
+    "externalTrust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publicKeySpkiSha256", "audience", "keyId", "signerRole"],
+      "properties": {
+        "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+        "audience": {"$ref": "#/$defs/id"},
+        "keyId": {"$ref": "#/$defs/id"},
+        "signerRole": {"$ref": "#/$defs/id"}
+      }
+    },
+    "reviewReceiptFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes", "recordCount", "expiresAtUtc", "trust"],
+      "properties": {
+        "path": {"const": "corpus/expert-model-review-receipts.jsonl"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1},
+        "recordCount": {"type": "integer", "minimum": 1, "maximum": 100000},
+        "expiresAtUtc": {"$ref": "#/$defs/utcSecond"},
+        "trust": {"$ref": "#/$defs/externalTrust"}
+      }
+    },
+    "evaluationAuthoringApprovalFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes", "authoringApprovalId", "payloadSha256", "envelopeSha256", "notBeforeUtc", "expiresAtUtc", "trust"],
+      "properties": {
+        "path": {"const": "review/evaluation-authoring-approval.json"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "authoringApprovalId": {"type": "string", "pattern": "^daxalgo-evaluation-authoring-approval-sha256-[0-9a-f]{64}$"},
+        "payloadSha256": {"$ref": "#/$defs/sha256"},
+        "envelopeSha256": {"$ref": "#/$defs/sha256"},
+        "notBeforeUtc": {"$ref": "#/$defs/utcSecond"},
+        "expiresAtUtc": {"$ref": "#/$defs/utcSecond"},
+        "trust": {"$ref": "#/$defs/externalTrust"}
+      }
+    },
+    "sftFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes", "recordCount"],
+      "properties": {
+        "path": {"const": "corpus/dataset.sft.jsonl"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1},
+        "recordCount": {"type": "integer", "minimum": 1, "maximum": 100000}
+      }
+    },
+    "taskFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes", "taskSetSha256", "recordCount"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1, "maxLength": 500},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1},
+        "taskSetSha256": {"$ref": "#/$defs/sha256"},
+        "recordCount": {"type": "integer", "minimum": 1, "maximum": 100000}
+      }
+    },
+    "reviewAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "sha256", "sizeBytes"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "path": {"type": "string", "pattern": "^evaluation/(rubrics|verifiers)/[0-9a-f]{64}\\.bin$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "contextPackAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "path", "sha256", "sizeBytes"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1, "maxLength": 500},
+        "path": {"type": "string", "pattern": "^evaluation/context-packs/[0-9a-f]{64}\\.bin$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "taskBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskId", "taskSha256", "sourceExampleIds", "contextPack", "rubric", "verifier"],
+      "properties": {
+        "taskId": {"$ref": "#/$defs/id"},
+        "taskSha256": {"$ref": "#/$defs/sha256"},
+        "sourceExampleIds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+        "contextPack": {"$ref": "#/$defs/contextPackAsset"},
+        "rubric": {"$ref": "#/$defs/reviewAsset"},
+        "verifier": {"$ref": "#/$defs/reviewAsset"}
+      }
+    }
+  }
+}

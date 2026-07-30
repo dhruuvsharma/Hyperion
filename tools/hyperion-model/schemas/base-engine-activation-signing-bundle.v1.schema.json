@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/base-engine-activation-signing-bundle.v1.schema.json",
+  "title": "DaxAlgo non-authorizing raw-base engine activation signing bundle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "bundleId", "status", "authority", "trust", "activationId", "payloadSha256", "payload", "unsignedEnvelopeSha256", "unsignedEnvelope", "validity", "signatureContract", "request"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.base-engine-activation-signing-bundle/v1"},
+    "bundleId": {"type": "string", "pattern": "^vqbaseactsigning-[0-9a-f]{64}$"},
+    "status": {"const": "unsigned-non-authorizing"},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseEngineActivation", "baseSelection", "checkpoint", "corpusReview", "deployment", "evaluation", "evaluationAuthoring", "hostedServing", "installation", "promotionDecision", "release", "review", "strategyExecution", "training", "verifierExecution"],
+      "properties": {
+        "baseEngineActivation": {"const": false},
+        "baseSelection": {"const": false},
+        "checkpoint": {"const": false},
+        "corpusReview": {"const": false},
+        "deployment": {"const": false},
+        "evaluation": {"const": false},
+        "evaluationAuthoring": {"const": false},
+        "hostedServing": {"const": false},
+        "installation": {"const": false},
+        "promotionDecision": {"const": false},
+        "release": {"const": false},
+        "review": {"const": false},
+        "strategyExecution": {"const": false},
+        "training": {"const": false},
+        "verifierExecution": {"const": false}
+      }
+    },
+    "trust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publicKeySpkiSha256", "audience", "keyId", "signerRole"],
+      "properties": {
+        "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+        "audience": {"$ref": "#/$defs/id"},
+        "keyId": {"$ref": "#/$defs/id"},
+        "signerRole": {"$ref": "#/$defs/id"}
+      }
+    },
+    "activationId": {"$ref": "#/$defs/activationId"},
+    "payloadSha256": {"$ref": "#/$defs/sha256"},
+    "payload": {"allOf": [{"$ref": "#/$defs/base64url"}, {"maxLength": 1333334}]},
+    "unsignedEnvelopeSha256": {"$ref": "#/$defs/sha256"},
+    "unsignedEnvelope": {"allOf": [{"$ref": "#/$defs/base64url"}, {"maxLength": 1333334}]},
+    "validity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuedAtUtc", "notBeforeUtc", "expiresAtUtc"],
+      "properties": {
+        "issuedAtUtc": {"$ref": "#/$defs/utc"},
+        "notBeforeUtc": {"$ref": "#/$defs/utc"},
+        "expiresAtUtc": {"$ref": "#/$defs/utc"}
+      }
+    },
+    "signatureContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "hashAlgorithm", "inputEncoding", "acceptedModes", "acceptedSignatureFormats"],
+      "properties": {
+        "algorithm": {"const": "ES256"},
+        "hashAlgorithm": {"const": "SHA-256"},
+        "inputEncoding": {"const": "base64url"},
+        "acceptedModes": {
+          "type": "array",
+          "prefixItems": [{"const": "raw-message"}, {"const": "sha256-digest"}],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "acceptedSignatureFormats": {
+          "type": "array",
+          "prefixItems": [{"const": "asn1-der"}, {"const": "ieee-p1363-fixed-64"}],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["activationId", "payloadSha256", "unsignedEnvelopeSha256", "signatureInputSha256", "signaturePreimage", "signatureInput"],
+      "properties": {
+        "activationId": {"$ref": "#/$defs/activationId"},
+        "payloadSha256": {"$ref": "#/$defs/sha256"},
+        "unsignedEnvelopeSha256": {"$ref": "#/$defs/sha256"},
+        "signatureInputSha256": {"$ref": "#/$defs/sha256"},
+        "signaturePreimage": {"allOf": [{"$ref": "#/$defs/base64url"}, {"maxLength": 1333334}]},
+        "signatureInput": {"type": "string", "minLength": 43, "maxLength": 43, "pattern": "^[A-Za-z0-9_-]{43}$"}
+      }
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "activationId": {"type": "string", "pattern": "^vqbaseact-[0-9a-f]{64}$"},
+    "utc": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+    "base64url": {"type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9_-]+$"}
+  }
+}

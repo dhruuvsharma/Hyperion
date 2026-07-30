@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/training-runtime-profile.v1.schema.json",
+  "title": "Vibe Quant sealed training runtime profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "python", "platform", "cuda", "directDependencies", "pylock"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.training-runtime-profile/v1"},
+    "python": {
+      "type": "object", "additionalProperties": false,
+      "required": ["implementation", "major", "minor"],
+      "properties": {"implementation": {"const": "CPython"}, "major": {"const": 3}, "minor": {"const": 11}}
+    },
+    "platform": {
+      "type": "object", "additionalProperties": false,
+      "required": ["system", "machine", "manylinux"],
+      "properties": {"system": {"const": "Linux"}, "machine": {"const": "x86_64"}, "manylinux": {"const": "manylinux_2_28"}}
+    },
+    "cuda": {
+      "type": "object", "additionalProperties": false,
+      "required": ["runtimeVersion"],
+      "properties": {"runtimeVersion": {"const": "12.1"}}
+    },
+    "directDependencies": {
+      "type": "object", "additionalProperties": false,
+      "required": ["accelerate", "bitsandbytes", "cryptography", "datasets", "peft", "torch", "transformers", "trl"],
+      "properties": {
+        "accelerate": {"const": "1.2.1"}, "bitsandbytes": {"const": "0.45.2"},
+        "cryptography": {"const": "48.0.0"},
+        "datasets": {"const": "3.2.0"}, "peft": {"const": "0.14.0"},
+        "torch": {"const": "2.5.1+cu121"}, "transformers": {"const": "4.48.3"}, "trl": {"const": "0.15.2"}
+      }
+    },
+    "pylock": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fileName", "sha256"],
+      "properties": {
+        "fileName": {"const": "pylock.train.toml"},
+        "sha256": {"const": "9e55bffe81d66a1f85bbacb6f910cac5fc01f0bfff99b4418fa53188784b3e72"}
+      }
+    }
+  }
+}

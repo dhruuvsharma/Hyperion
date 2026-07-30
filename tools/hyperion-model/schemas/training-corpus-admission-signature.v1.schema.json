@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/training-corpus-admission-signature.v1.schema.json",
+  "title": "DaxAlgo detached training corpus admission signature v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "signatureId", "signingBundleId", "signingBundleSha256", "corpusAdmissionId", "datasetSha256", "qualityReportSha256", "qualityPolicySha256", "payloadSha256", "signatureInputSha256", "publicKeySpkiSha256", "format", "signature"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.training-corpus-admission-signature/v1"},
+    "signatureId": {"type": "string", "pattern": "^vqcorpusadmissionsignature-[0-9a-f]{64}$"},
+    "signingBundleId": {"type": "string", "pattern": "^vqcorpusadmissionsigning-[0-9a-f]{64}$"},
+    "signingBundleSha256": {"$ref": "#/$defs/sha256"},
+    "corpusAdmissionId": {"type": "string", "pattern": "^vqcorpusadmit-[0-9a-f]{64}$"},
+    "datasetSha256": {"$ref": "#/$defs/sha256"},
+    "qualityReportSha256": {"$ref": "#/$defs/sha256"},
+    "qualityPolicySha256": {"$ref": "#/$defs/sha256"},
+    "payloadSha256": {"$ref": "#/$defs/sha256"},
+    "signatureInputSha256": {"$ref": "#/$defs/sha256"},
+    "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+    "format": {"enum": ["asn1-der", "ieee-p1363-fixed-64"]},
+    "signature": {"type": "string", "minLength": 1, "maxLength": 107, "pattern": "^[A-Za-z0-9_-]+$"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"format": {"const": "ieee-p1363-fixed-64"}}, "required": ["format"]},
+      "then": {"properties": {"signature": {"minLength": 86, "maxLength": 86}}}
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

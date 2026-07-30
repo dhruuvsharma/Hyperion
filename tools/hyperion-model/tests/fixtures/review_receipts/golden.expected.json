@@ -1,0 +1,12 @@
+{
+  "audience": "daxalgo-vibe-quant-training",
+  "datasetSha256": "0dffc98c8cddc88e20f7556291ce6b79294a808e4c3abf7bdc6804109278074e",
+  "envelopeSha256": "9ac6be1d5834bf0d27cdd0004c9bd7bfe33bf511027f053383d702667ddf98d1",
+  "keyId": "review-key-2025-01",
+  "payloadSha256": "71f6fac91082bdd0ca1a12f77be34e1eb7d0f868d4cdbedddb39340c242c89ec",
+  "publicKeySpkiSha256": "f3c9d135604346824a568ba09251f3118e0184b417fae972a66668ff3f93d75d",
+  "receiptId": "vqreview-84dfa833877f75136abe62916dfb3ff1fd8b2861b6dad00f6acbd1972edafdfb",
+  "receiptSetSha256": "25b779ab3c07bca587783ed69032774d2075bf5948b8ecf6a17b43c5b072cb41",
+  "sftMetadataSha256": "599506ca278db21a906e7544e21844f7c4304c0ad3efcc88df3d1a8f60a05fd2",
+  "signerRole": "expert-review-authority"
+}

@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/hosted-deployment-policy.v2.schema.json",
+  "title": "Vibe Quant hosted deployment policy v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "policySha256", "providerId", "protocol", "pricing", "execution", "coordinator", "strategyAuthoringCapability", "expertContext"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.hosted-deployment-policy/v2"},
+    "policySha256": {"$ref": "#/$defs/sha256"},
+    "providerId": {"$ref": "#/$defs/providerId"},
+    "protocol": {"const": "openai-compatible"},
+    "pricing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputUsdPerMillionTokens", "outputUsdPerMillionTokens", "creditsPerUsd", "minimumChargeCredits", "creditPricingVersion"],
+      "properties": {
+        "inputUsdPerMillionTokens": {"$ref": "#/$defs/decimal"},
+        "outputUsdPerMillionTokens": {"$ref": "#/$defs/decimal"},
+        "creditsPerUsd": {"type": "integer", "minimum": 1, "maximum": 1000000000},
+        "minimumChargeCredits": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+        "creditPricingVersion": {"$ref": "#/$defs/text100"}
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxRequests", "maxAttemptsPerRole", "maxPromptTokens", "maxOutputTokens", "maxOutputTokensPerRequest", "maxCostUsd", "maxResponseBytes", "maxArtifactBytes", "maxElapsedSeconds", "requestTimeoutSeconds", "requireReportedUsage", "maxActiveRunsPerAccount", "workerPollMilliseconds", "modelAttestationTimeoutSeconds", "modelAttestationRefreshSeconds", "modelAttestationTtlSeconds"],
+      "properties": {
+        "maxRequests": {"type": "integer", "minimum": 1, "maximum": 100},
+        "maxAttemptsPerRole": {"type": "integer", "minimum": 1, "maximum": 10},
+        "maxPromptTokens": {"type": "integer", "minimum": 1, "maximum": 10000000},
+        "maxOutputTokens": {"type": "integer", "minimum": 1, "maximum": 10000000},
+        "maxOutputTokensPerRequest": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "maxCostUsd": {"$ref": "#/$defs/positiveDecimal"},
+        "maxResponseBytes": {"type": "integer", "minimum": 1, "maximum": 2000000},
+        "maxArtifactBytes": {"type": "integer", "minimum": 1, "maximum": 2000000},
+        "maxElapsedSeconds": {"type": "integer", "minimum": 1, "maximum": 86400},
+        "requestTimeoutSeconds": {"type": "integer", "minimum": 1, "maximum": 3600},
+        "requireReportedUsage": {"type": "boolean"},
+        "maxActiveRunsPerAccount": {"type": "integer", "minimum": 1, "maximum": 100},
+        "workerPollMilliseconds": {"type": "integer", "minimum": 50, "maximum": 60000},
+        "modelAttestationTimeoutSeconds": {"type": "integer", "minimum": 1, "maximum": 60},
+        "modelAttestationRefreshSeconds": {"type": "integer", "minimum": 5, "maximum": 300},
+        "modelAttestationTtlSeconds": {"type": "integer", "minimum": 10, "maximum": 900}
+      }
+    },
+    "coordinator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policyVersion", "workflowVersion", "promptCatalogSha256"],
+      "properties": {
+        "policyVersion": {"$ref": "#/$defs/text100"},
+        "workflowVersion": {"$ref": "#/$defs/text100"},
+        "promptCatalogSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "strategyAuthoringCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["purpose", "executionModelId", "policyVersion", "workflowVersion", "promptCatalogSha256"],
+      "properties": {
+        "purpose": {"const": "StrategyAuthoring"},
+        "executionModelId": {"type": "string", "pattern": "^daxalgo-expert-sha256-[0-9a-f]{64}$"},
+        "policyVersion": {"const": "strategy-authoring-inert/v1"},
+        "workflowVersion": {"const": "fixed-strategy-authoring/v1"},
+        "promptCatalogSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "expertContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "corpusId", "corpusVersion", "packSha256", "queryPolicy", "queryPolicySha256", "queryMaxCharacters"],
+      "properties": {
+        "mode": {"const": "Pinned"},
+        "corpusId": {"$ref": "#/$defs/corpusId"},
+        "corpusVersion": {"$ref": "#/$defs/corpusVersion"},
+        "packSha256": {"$ref": "#/$defs/sha256"},
+        "queryPolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion", "topK", "maxCharacters", "maxPerSource"],
+          "properties": {
+            "schemaVersion": {"const": "daxalgo-expert-context-query-policy/v1"},
+            "topK": {"type": "integer", "minimum": 1, "maximum": 100},
+            "maxCharacters": {"type": "integer", "minimum": 1, "maximum": 500000},
+            "maxPerSource": {"type": "integer", "minimum": 1, "maximum": 100}
+          }
+        },
+        "queryPolicySha256": {"$ref": "#/$defs/sha256"},
+        "queryMaxCharacters": {"type": "integer", "minimum": 1, "maximum": 1000000}
+      }
+    }
+  },
+  "$defs": {
+    "providerId": {"type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},
+    "corpusId": {"type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9._-]+$"},
+    "corpusVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "not": {"pattern": "^(?:[Ll][Aa][Tt][Ee][Ss][Tt]|[Mm][Aa][Ii][Nn]|[Mm][Aa][Ss][Tt][Ee][Rr]|[Tt][Rr][Uu][Nn][Kk])$"}
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "text100": {"type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[^\\u0000-\\u001F\\u007F]+$"},
+    "decimal": {"type": "string", "maxLength": 20, "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{0,8}[1-9])?$"},
+    "positiveDecimal": {"type": "string", "maxLength": 20, "pattern": "^((0\\.[0-9]{0,8}[1-9])|([1-9][0-9]*(\\.[0-9]{0,8}[1-9])?))$"}
+  }
+}

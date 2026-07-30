@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/vibe-quant/evaluation-authoring-approval.v1.schema.json",
+  "title": "Vibe Quant evaluation-authoring approval v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "authoringApprovalId", "decision", "scope", "reusable", "evaluationAuthoringApproved", "corpusReviewAuthorized", "releaseAuthorized", "trainingAuthorized", "baseSelectionAuthorized", "promotionDecisionAuthorized", "deploymentAuthorized", "hostedServingAuthorized", "installationAuthorized", "verifierExecutionAuthorized", "strategyExecutionAuthorized", "issuedAtUtc", "notBeforeUtc", "expiresAtUtc", "inventory", "approval", "statement"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.vibe-quant.evaluation-authoring-approval/v1"},
+    "authoringApprovalId": {"type": "string", "pattern": "^daxalgo-evaluation-authoring-approval-sha256-[0-9a-f]{64}$"},
+    "decision": {"const": "approved"},
+    "scope": {"const": "release-evaluation-authoring-only"},
+    "reusable": {"const": true},
+    "evaluationAuthoringApproved": {"const": true},
+    "corpusReviewAuthorized": {"const": false},
+    "releaseAuthorized": {"const": false},
+    "trainingAuthorized": {"const": false},
+    "baseSelectionAuthorized": {"const": false},
+    "promotionDecisionAuthorized": {"const": false},
+    "deploymentAuthorized": {"const": false},
+    "hostedServingAuthorized": {"const": false},
+    "installationAuthorized": {"const": false},
+    "verifierExecutionAuthorized": {"const": false},
+    "strategyExecutionAuthorized": {"const": false},
+    "issuedAtUtc": {"$ref": "#/$defs/utc"},
+    "notBeforeUtc": {"$ref": "#/$defs/utc"},
+    "expiresAtUtc": {"$ref": "#/$defs/utc"},
+    "inventory": {"$ref": "#/$defs/inventory"},
+    "approval": {"$ref": "#/$defs/approval"},
+    "statement": {"type": "string", "minLength": 1, "maxLength": 1000}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"},
+    "boundId": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "utc": {"type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+    "sourceFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "sizeBytes", "recordCount"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1, "maximum": 100000000},
+        "recordCount": {"type": "integer", "minimum": 1, "maximum": 100000}
+      }
+    },
+    "taskFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "sizeBytes", "taskSetSha256", "recordCount"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1, "maximum": 100000000},
+        "taskSetSha256": {"$ref": "#/$defs/sha256"},
+        "recordCount": {"type": "integer", "minimum": 1, "maximum": 100000}
+      }
+    },
+    "contextPack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "sha256", "sizeBytes"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1, "maxLength": 500},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1, "maximum": 16000000}
+      }
+    },
+    "identifiedAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sha256", "sizeBytes"],
+      "properties": {
+        "id": {"$ref": "#/$defs/boundId"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1, "maximum": 16000000}
+      }
+    },
+    "taskBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskId", "taskSha256", "sourceExampleIds", "contextPack", "rubric", "verifier"],
+      "properties": {
+        "taskId": {"$ref": "#/$defs/boundId"},
+        "taskSha256": {"$ref": "#/$defs/sha256"},
+        "sourceExampleIds": {"type": "array", "minItems": 1, "maxItems": 100000, "uniqueItems": true, "items": {"$ref": "#/$defs/boundId"}},
+        "contextPack": {"$ref": "#/$defs/contextPack"},
+        "rubric": {"$ref": "#/$defs/identifiedAsset"},
+        "verifier": {"$ref": "#/$defs/identifiedAsset"}
+      }
+    },
+    "inventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceDataset", "calibrationTasks", "sealedTasks", "taskBindings"],
+      "properties": {
+        "sourceDataset": {"$ref": "#/$defs/sourceFile"},
+        "calibrationTasks": {"$ref": "#/$defs/taskFile"},
+        "sealedTasks": {"$ref": "#/$defs/taskFile"},
+        "taskBindings": {"type": "array", "minItems": 1, "maxItems": 100000, "items": {"$ref": "#/$defs/taskBinding"}}
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approvalId", "actorId", "actorRole", "reference", "approvedAtUtc"],
+      "properties": {
+        "approvalId": {"$ref": "#/$defs/id"},
+        "actorId": {"$ref": "#/$defs/id"},
+        "actorRole": {"$ref": "#/$defs/id"},
+        "reference": {"type": "string", "minLength": 1, "maxLength": 500},
+        "approvedAtUtc": {"$ref": "#/$defs/utc"}
+      }
+    }
+  }
+}
