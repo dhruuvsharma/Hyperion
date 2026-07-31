@@ -308,6 +308,155 @@ public sealed class HeadlessStrategyVerifierTests
     }
 
     [Fact]
+    public async Task ReplayWorkspaceCleanupRetriesAReleasedSharingViolation()
+    {
+        var work = Directory.CreateTempSubdirectory("daxalgo-verifier-cleanup-test-");
+        var sentinelPath = Path.Combine(work.FullName, "sentinel.bin");
+        FileStream? held = null;
+        try
+        {
+            held = new FileStream(
+                sentinelPath,
+                FileMode.CreateNew,
+                FileAccess.ReadWrite,
+                FileShare.None);
+            var retryCount = 0;
+
+            await CandidateReplayProcess.DeleteWorkDirectoryAsync(
+                work.FullName,
+                _ =>
+                {
+                    retryCount++;
+                    held.Dispose();
+                    held = null;
+                    return Task.CompletedTask;
+                },
+                maximumAttempts: 3);
+
+            Assert.Equal(1, retryCount);
+            Assert.False(Directory.Exists(work.FullName));
+        }
+        finally
+        {
+            held?.Dispose();
+            if (Directory.Exists(work.FullName))
+            {
+                Directory.Delete(work.FullName, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ReplayWorkspaceCleanupFailsClosedWhenLockPersists()
+    {
+        var work = Directory.CreateTempSubdirectory("daxalgo-verifier-cleanup-test-");
+        var sentinelPath = Path.Combine(work.FullName, "sentinel.bin");
+        try
+        {
+            using (new FileStream(
+                       sentinelPath,
+                       FileMode.CreateNew,
+                       FileAccess.ReadWrite,
+                       FileShare.None))
+            {
+                var retryCount = 0;
+                await Assert.ThrowsAsync<IOException>(() =>
+                    CandidateReplayProcess.DeleteWorkDirectoryAsync(
+                        work.FullName,
+                        _ =>
+                        {
+                            retryCount++;
+                            return Task.CompletedTask;
+                        },
+                        maximumAttempts: 3));
+
+                Assert.Equal(2, retryCount);
+                Assert.True(Directory.Exists(work.FullName));
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(work.FullName))
+            {
+                Directory.Delete(work.FullName, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ReplayResourceCleanupTerminatesStartedProcessBeforeDeletingWorkspace()
+    {
+        var work = Directory.CreateTempSubdirectory("daxalgo-verifier-cleanup-test-");
+        Process? process = null;
+        try
+        {
+            process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = Path.Combine(Environment.SystemDirectory, "ping.exe"),
+                    WorkingDirectory = work.FullName,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                },
+            };
+            process.StartInfo.ArgumentList.Add("-n");
+            process.StartInfo.ArgumentList.Add("30");
+            process.StartInfo.ArgumentList.Add("127.0.0.1");
+            Assert.True(process.Start());
+
+            var cleanupException = await CandidateReplayProcess.CleanupReplayResourcesAsync(
+                process,
+                processStarted: true,
+                work.FullName,
+                static delay => Task.Delay(delay),
+                maximumAttempts: 21);
+            process = null;
+
+            Assert.Null(cleanupException);
+            Assert.False(Directory.Exists(work.FullName));
+        }
+        finally
+        {
+            if (process is not null)
+            {
+                try
+                {
+                    if (!process.HasExited)
+                    {
+                        process.Kill(entireProcessTree: true);
+                        await process.WaitForExitAsync();
+                    }
+                }
+                finally
+                {
+                    process.Dispose();
+                }
+            }
+
+            if (Directory.Exists(work.FullName))
+            {
+                Directory.Delete(work.FullName, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void ReplayCleanupPreservesPrimaryAndCleanupFailures()
+    {
+        var primary = new InvalidOperationException("primary-lifecycle-failure");
+        var cleanup = new IOException("cleanup-failure");
+
+        var exception = Assert.Throws<AggregateException>(() =>
+            CandidateReplayProcess.ThrowCleanupFailure(primary, cleanup));
+
+        Assert.Collection(
+            exception.InnerExceptions,
+            item => Assert.Same(primary, item),
+            item => Assert.Same(cleanup, item));
+    }
+
+    [Fact]
     public async Task CoreApisOutsideTheClosedStrategyProfileAreRejected()
     {
         var sourceBytes = Encoding.UTF8.GetBytes(StrategySource(

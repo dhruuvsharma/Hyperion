@@ -16,7 +16,7 @@ not a development target for Hyperion after this extraction.
 - Implemented: coordinator workflows, durable state, OpenAI-compatible and replay providers,
   dataset/review/release gates, retrieval packs, evaluation and promotion evidence, runtime wrappers,
   detached signing handoffs, hosted API integration, and the isolated C# verifier.
-- Verified in this repository: 537 .NET tests, 494 Python tests (plus five expected Windows
+- Verified in this repository: 541 .NET tests, 494 Python tests (plus five expected Windows
   POSIX/symlink-capability skips), 113 schemas with 2,029 resolved references, all CLI help surfaces, and
   the digest-pinned verifier Docker build.
 - Not yet established: a rights-approved training corpus, production signing custody, a conforming

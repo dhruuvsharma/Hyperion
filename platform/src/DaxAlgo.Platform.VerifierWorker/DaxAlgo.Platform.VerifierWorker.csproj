@@ -16,4 +16,8 @@
     <ProjectReference Include="../../../public/src/windows/Core/TradingTerminal.Core/TradingTerminal.Core.csproj" />
     <ProjectReference Include="../../../public/src/windows/Sdk/DaxAlgo.Sdk/DaxAlgo.Sdk.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DaxAlgo.Platform.VerifierWorker.Tests" />
+  </ItemGroup>
 </Project>

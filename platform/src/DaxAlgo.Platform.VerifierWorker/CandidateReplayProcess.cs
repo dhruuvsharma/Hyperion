@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 using System.Text.Json;
 
 namespace DaxAlgo.Platform.VerifierWorker;
@@ -11,7 +12,9 @@ internal static class CandidateReplayProcess
     private const int MaximumRequestBytes = 1024 * 1024;
     private const int MaximumResultBytes = 256 * 1024;
     private const int MaximumCapturedOutputBytes = 16 * 1024;
+    private const int MaximumCleanupAttempts = 21;
     private const long MaximumNumericValue = 1_000_000_000_000;
+    private static readonly TimeSpan CleanupRetryDelay = TimeSpan.FromMilliseconds(100);
     private static readonly TimeSpan ReplayTimeout = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan TerminationTimeout = TimeSpan.FromSeconds(2);
 
@@ -35,6 +38,9 @@ internal static class CandidateReplayProcess
 
         var appHostPath = ResolveWorkerAppHost();
         var workDirectory = Directory.CreateTempSubdirectory("daxalgo-verifier-replay-");
+        Process? process = null;
+        var processStarted = false;
+        Exception? primaryException = null;
         try
         {
             var assemblyPath = Path.Combine(workDirectory.FullName, "candidate.dll");
@@ -61,7 +67,7 @@ internal static class CandidateReplayProcess
             WriteSnapshot(assemblyPath, assemblyBytes);
             WriteSnapshot(requestPath, requestBytes);
             var requestSha256 = VerifierToolchain.Hash(requestBytes);
-            using var process = CreateProcess(
+            process = CreateProcess(
                 appHostPath,
                 workDirectory.FullName,
                 assemblyPath,
@@ -71,6 +77,7 @@ internal static class CandidateReplayProcess
             {
                 throw new InvalidOperationException("The fixed verifier apphost did not start.");
             }
+            processStarted = true;
 
             var outputExceeded = new TaskCompletionSource(
                 TaskCreationOptions.RunContinuationsAsynchronously);
@@ -133,9 +140,21 @@ internal static class CandidateReplayProcess
                 requestSha256,
                 assemblySha256);
         }
+        catch (Exception exception)
+        {
+            primaryException = exception;
+            throw;
+        }
         finally
         {
-            Directory.Delete(workDirectory.FullName, recursive: true);
+            var cleanupException = await CleanupReplayResourcesAsync(
+                process,
+                processStarted,
+                workDirectory.FullName);
+            if (cleanupException is not null)
+            {
+                ThrowCleanupFailure(primaryException, cleanupException);
+            }
         }
     }
 
@@ -305,6 +324,127 @@ internal static class CandidateReplayProcess
                 exception);
         }
     }
+
+    private static Task DeleteWorkDirectoryAsync(string workDirectory) =>
+        DeleteWorkDirectoryAsync(
+            workDirectory,
+            static delay => Task.Delay(delay),
+            MaximumCleanupAttempts);
+
+    internal static async Task DeleteWorkDirectoryAsync(
+        string workDirectory,
+        Func<TimeSpan, Task> retryDelay,
+        int maximumAttempts)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(workDirectory);
+        ArgumentNullException.ThrowIfNull(retryDelay);
+        ArgumentOutOfRangeException.ThrowIfLessThan(maximumAttempts, 1);
+
+        var resolved = Path.GetFullPath(workDirectory);
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                Directory.Delete(resolved, recursive: true);
+                return;
+            }
+            catch (DirectoryNotFoundException)
+            {
+                return;
+            }
+            catch (Exception exception) when (
+                exception is IOException or UnauthorizedAccessException
+                && attempt < maximumAttempts)
+            {
+                await retryDelay(CleanupRetryDelay);
+            }
+        }
+    }
+
+    private static Task<Exception?> CleanupReplayResourcesAsync(
+        Process? process,
+        bool processStarted,
+        string workDirectory) =>
+        CleanupReplayResourcesAsync(
+            process,
+            processStarted,
+            workDirectory,
+            static delay => Task.Delay(delay),
+            MaximumCleanupAttempts);
+
+    internal static async Task<Exception?> CleanupReplayResourcesAsync(
+        Process? process,
+        bool processStarted,
+        string workDirectory,
+        Func<TimeSpan, Task> retryDelay,
+        int maximumAttempts)
+    {
+        Exception? cleanupException = null;
+        if (process is not null)
+        {
+            if (processStarted)
+            {
+                try
+                {
+                    if (!process.HasExited)
+                    {
+                        await TerminateProcessTreeAsync(process);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    cleanupException = AppendCleanupFailure(cleanupException, exception);
+                }
+            }
+
+            try
+            {
+                process.Dispose();
+            }
+            catch (Exception exception)
+            {
+                cleanupException = AppendCleanupFailure(cleanupException, exception);
+            }
+        }
+
+        try
+        {
+            await DeleteWorkDirectoryAsync(workDirectory, retryDelay, maximumAttempts);
+        }
+        catch (Exception exception)
+        {
+            cleanupException = AppendCleanupFailure(cleanupException, exception);
+        }
+
+        return cleanupException;
+    }
+
+    internal static void ThrowCleanupFailure(
+        Exception? primaryException,
+        Exception cleanupException)
+    {
+        ArgumentNullException.ThrowIfNull(cleanupException);
+        if (primaryException is not null)
+        {
+            throw new AggregateException(
+                "The candidate replay failed and resource cleanup also failed.",
+                primaryException,
+                cleanupException);
+        }
+
+        ExceptionDispatchInfo.Capture(cleanupException).Throw();
+        throw new UnreachableException();
+    }
+
+    private static Exception AppendCleanupFailure(
+        Exception? current,
+        Exception next) =>
+        current is null
+            ? next
+            : new AggregateException(
+                "Multiple candidate replay resource-cleanup operations failed.",
+                current,
+                next);
 
     private static CandidateExecution ReadResponse(
         string resultPath,
