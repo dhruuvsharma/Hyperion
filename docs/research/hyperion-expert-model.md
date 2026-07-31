@@ -1,6 +1,6 @@
 # Hyperion expert model: research, training, and serving plan
 
-Date: 2026-07-27; updated 2026-07-30
+Date: 2026-07-27; updated 2026-07-31
 Status: implementation in progress; checkpoint training has not yet run
 
 Hyperion is the product and repository name. Legacy Vibe Quant identifiers remain in signed schemas,
@@ -8,14 +8,29 @@ routes, persisted records, and compatibility code where changing them would inva
 
 ## Decision
 
-Build a verified coding specialist, not an autonomous trading oracle.
+Build a verified expert-model portfolio, not an autonomous trading oracle and not one model forced
+to perform every role. The canonical target design is
+[`docs/architecture/hyperion-frontier-architecture.md`](../architecture/hyperion-frontier-architecture.md).
 
 The first student bake-off should compare:
 
 1. `Qwen/Qwen2.5-Coder-7B-Instruct` and `Qwen/Qwen2.5-Coder-14B-Instruct` for the strongest practical code-first baseline.
 2. `openai/gpt-oss-20b` for a reasoning-heavy, memory-efficient alternative.
 
-Use an open-weight Qwen3-Coder model as the teacher/coordinator, subject to measured hardware cost. Treat verified teacher-output SFT as a small calibration-gated pilot, not an assumed improvement: competent coding students can regress under answer imitation. If the pilot stalls or regresses, move executable C#/numeric work to reinforcement learning with verifiable rewards (RLVR); reserve DPO/SimPO for matched same-prompt candidates and KTO for reliable unpaired binary outcomes. Do not begin with full-parameter training, opaque hosted-teacher data, raw backtest-return rewards, or autonomous code execution.
+The frozen four-model production catalog remains the first controlled bake-off. In parallel, maintain
+a challenger registry spanning practical Qwen3/Qwen3-Coder models, Qwen3.5-9B, Devstral Small 2,
+Falcon-H1-34B, gpt-oss-20b, and hardware-appropriate successors. Use a domain-calibrated council of
+hosted or downloadable frontier teachers—including GPT-5.6, Gemini, Claude, Kimi K3, Qwen, DeepSeek,
+GLM, Llama, MiniMax, and gpt-oss-120b candidates—rather than granting one teacher universal
+authority. Payment, gating, custom licensing, and separately negotiated permission are acquisition
+metadata managed by the user; they are not architectural exclusions.
+
+Treat verified teacher-output SFT as a small calibration-gated pilot, not an assumed improvement:
+competent coding students can regress under answer imitation. If it passes, test DPO; if executable
+C#/numeric work stalls, compare RLOO and GRPO with compiler, tests, numerical oracles, and risk
+invariants. Introduce on-policy/multi-teacher distillation only when authorised probabilities or
+logits exist. Do not begin with full-parameter training, raw backtest-return rewards, undisclosed
+teacher internals, or autonomous code execution.
 
 The production shape is:
 
@@ -56,7 +71,14 @@ Base-model selection v2 now also has a provider-neutral prepare/sign/finalize se
 
 Launcher activation now has the same provider-neutral custody boundary without changing the activation-v1 payload or envelope accepted by the wrapper, response-v2 capture, selection, promotion, or replay consumers. Preparation accepts only the exact live wrapper config, public launcher identity, and validity window, then emits a content-addressed authority-false bundle containing the canonical activation payload, unsigned envelope, raw ES256 preimage, and SHA-256 digest. An external provider signs the raw message or prehashed digest and returns canonical DER or fixed P1363; private-key-free finalization verifies and low-S-normalizes it, rederives the config/package, sealed model target, runtime signer, and executable bindings, rechecks validity during staged no-clobber publication, and emits the unchanged activation-v1 wire. The bundle alone grants no authority, while a valid bundle/signature pair is replayable exact-activation finalization material until expiry. This is a custody integration seam, not KMS/HSM IAM, quorum, audit, signer-identity, rotation/revocation, honest-clock, immutable-input, or privileged-host-path attestation, and no real launcher signer or activation is supplied.
 
-The existing credit work should not be rebuilt. The next dependency is real evidence: capture and independently filter real teacher candidates, run deterministic and subject-matter review over the resulting drafts, issue one independent exact-lineage admission and authenticated row receipts through their detached signing handoffs, approve a rights-clean release, run the raw-base bake-off, sign the reviewed student/snapshot choice through the implemented detached selection contract, independently validate the sealed training lock on suitable server GPUs, establish actual production KMS/HSM custody and reviewer policy, and measure the resulting checkpoint against the strongest baseline.
+The existing credit work should not be rebuilt. The next dependency is real evidence: capture and
+independently filter real teacher candidates, run deterministic and subject-matter review over the
+resulting drafts, issue one independent exact-lineage admission and authenticated row receipts
+through their detached signing handoffs, approve a release with authoritative user-managed
+permission records, run the raw-base bake-off, sign the reviewed student/snapshot choice through the
+implemented detached selection contract, independently validate the sealed training lock on
+suitable server GPUs, establish actual production KMS/HSM custody and reviewer policy, and measure
+the resulting checkpoint against the strongest baseline.
 
 ## Why this distillation approach
 
@@ -79,7 +101,11 @@ Hidden chain-of-thought is not required and must not be collected from hosted pr
 
 ## Candidate bake-off
 
-All shortlisted weights have permissive licences, but the base-model licence, its training-data provenance, teacher-output terms, source-data rights, and generated-code provenance remain separate approval records.
+The implemented production shortlist happens to use permissively licensed weights, but permission is
+not a technical-ranking filter. Every base, teacher, dataset, paper/code implementation, and service
+still records its exact source, acquired revision, price/terms snapshot, accountable permission
+owner, data policy, and derived-artifact lineage. Paid, gated, or custom-licensed candidates remain
+eligible when the user supplies authorised access.
 
 | Candidate | Useful facts | Role in the bake-off |
 |---|---|---|

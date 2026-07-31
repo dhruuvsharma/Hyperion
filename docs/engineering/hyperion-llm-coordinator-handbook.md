@@ -2,8 +2,8 @@
 
 ## Engineering handbook for the ML, platform, and safety teams
 
-**Version:** 1.0
-**Date:** 30 July 2026
+**Version:** 1.1
+**Date:** 31 July 2026
 **Classification:** Private engineering material
 **Repository:** `dhruuvsharma/Hyperion`
 **Audience:** ML engineers, research engineers, platform engineers, security reviewers, and technical operators
@@ -13,7 +13,10 @@ handbook explains the system from first principles: why it exists, how the code 
 request moves through the coordinator, how data can become training material, how a base model is
 selected and tuned, how evidence is evaluated and signed, how a model is activated, what the
 isolated verifier can and cannot prove, what Kimi K3 contributes to the research direction, and what
-the proposed GPU cluster must provide.
+the proposed GPU cluster must provide. The canonical target design is
+[`docs/architecture/hyperion-frontier-architecture.md`](../architecture/hyperion-frontier-architecture.md);
+this handbook combines that future architecture with the exact implementation evidence engineers
+must preserve while building it.
 
 > Evidence boundary: Hyperion has substantial implemented infrastructure and passing tests. It does
 > **not** yet have a rights-approved production corpus, a conforming training run, trained Hyperion
@@ -522,6 +525,27 @@ No real raw-base captures or signed selection exist yet. Adding Kimi K3 to a res
 silently change this production catalog or its hashes; any catalog change is a reviewed, versioned
 experiment followed by a fresh complete bake-off.
 
+### 9.5 Target challenger and teacher portfolio
+
+The four-entry catalog above is the implemented comparison contract, not the limit of Hyperion's
+target architecture. A separate dated registry admits any technically useful hosted, downloadable,
+gated, commercial, custom-licensed, or permissioned candidate for research. Access, price, terms,
+attribution, retention, and the accountable permission owner are provenance fields; they are not
+automatic technical rejection criteria.
+
+| Portfolio tier | Current source-reviewed examples | Intended role |
+|---|---|---|
+| Hosted frontier | GPT-5.6 Sol/Terra/Luna, Gemini 3.1 Pro, Claude Fable 5, Kimi K3 API | Difficult teacher traces, independent criticism, multimodal and long-context comparison |
+| Large open/downloadable | Kimi K3, Qwen3.5 large MoE, GLM-5/5.2, DeepSeek R1/V3 line, Llama 4, gpt-oss-120b, MiniMax-M2.5 | Reproducible teachers, logits when available, large-cluster challengers |
+| Small-cluster students | gpt-oss-20b, practical Qwen3/Qwen3-Coder sizes, Qwen3.5-9B, Devstral Small 2 24B, Falcon-H1-34B | Private adapter training and economical serving |
+| Specialists | C#/architecture, UI, quant/math, risk/portfolio, research/tool-use adapters at measured effort levels | Domain depth without forcing one checkpoint to dominate every task |
+| Control models | Router, critic, judge, embedding model, reranker | Selection, retrieval, uncertainty, and independent challenge |
+
+Every registry record pins the source/revision and records modality, context, disclosed total/active
+parameters, architecture, template/tool protocol, precision, runtime, measured resources,
+quality/latency/cost evidence, allowed roles, data policy, and lifecycle state. Unknown internals stay
+unknown. Adding a record grants no training, promotion, activation, or user-data authority.
+
 ## 10. Training system
 
 ### 10.1 Frozen software environment
@@ -594,6 +618,36 @@ GPU time, peak memory, power/thermal data, failures, and final tree identity. Re
 aborted runs as evidence; deleting them makes selection bias invisible.
 
 Hyperion currently has no conforming training run, adapter, checkpoint, or trained weights.
+
+### 10.6 Target distillation and post-training ladder
+
+QLoRA SFT is the first experiment, not the final architecture. Each later stage starts only when the
+previous stage beats the raw base and strongest frozen baseline on sealed primary gates without
+protected-domain, safety, latency, or cost regression.
+
+1. **Raw-base plus retrieval bake-off:** compare unmodified candidates with and without the same
+   retrieval pack so retrieval gains are not misattributed to training.
+2. **Verified SFT:** use reviewed human examples and teacher sequences whose compiler, tests,
+   numerical oracle, citations, or risk checks pass. For MoE students such as gpt-oss, tune the
+   supported expert projections as well as attention when the upstream recipe requires it.
+3. **Preference optimisation:** test DPO first after SFT stability. SimPO, KTO, or another objective
+   is a challenger only when its data assumptions match the reviewed preference records.
+4. **RL with verifiable rewards:** compare RLOO and GRPO on identical tasks. Reward exact outcomes
+   and bounded efficiency; log KL, entropy, group composition, zero-variance groups, response length,
+   and each reward component. Never optimise backtest PnL, Sharpe, or public benchmark rank directly.
+5. **Multi-teacher/on-policy distillation:** route prompts to teachers that passed domain calibration,
+   retain disagreements and provenance, and use student-generated trajectories. Token-level
+   distillation requires authorised teacher probabilities or logits; hosted text is not equivalent.
+6. **Specialists and routing:** isolate C#/architecture, UI, quant/math, risk/portfolio, and
+   research/tool-use adapters at low/high/max effort. Start with rules; accept a learned router only
+   after it improves calibration, cost, abstention, and worst-domain quality.
+7. **Architecture research:** KDA/DeltaNet, sparse attention, Transformer-Mamba hybrids, Attention
+   Residuals, Stable LatentMoE, MTP, early-fusion vision, and Muon variants require controlled
+   pretraining ablations. They are not features that QLoRA can retrofit faithfully.
+
+Process reward models may improve long-trajectory credit assignment, but they are auxiliary where an
+executable verifier exists. DAPO, asynchronous RL, and large disaggregated rollout stacks are later
+pilots after small-scale correctness and reward-hacking audits.
 
 ## 11. Evaluation, replay, and promotion
 
@@ -852,7 +906,14 @@ emergency disablement, backup/recovery, clock source, certificate/public-key dis
 incident procedures. Test expired, revoked, wrong-role, wrong-audience, replaced-key, and compromised
 signer scenarios. Configuration removal/restart is not a complete long-term revocation service.
 
-## 15. Kimi K3 research adoption
+## 15. Frontier model architecture and Kimi K3 adoption
+
+![Hyperion frontier model factory](assets/hyperion-frontier-model-factory.png)
+
+Hyperion's target is a governed portfolio rather than a single winner: hosted frontier teachers,
+large downloadable teachers, small-cluster students, domain/effort adapters, critics, judges,
+routers, embeddings, and rerankers all sit behind one evidence protocol. Kimi K3 is an important
+source of architecture and agent-training ideas inside that portfolio, not the only design input.
 
 ### 15.1 Verified source and scale
 
@@ -896,7 +957,7 @@ These are system lessons, not a recipe Hyperion has reproduced.
 | Structured transcripts | Separate roles, visible answers, tool calls/results, scope, and provider state; avoid retaining hidden reasoning | Round-trip/provider tests and privacy review |
 | Stronger sandboxing | Plan microVM/separate-host execution for adversarial agent/RL workloads | Threat model, provenance, egress, attestation, and incident exercises |
 
-### 15.4 Research only
+### 15.4 Pretraining research tracks
 
 Kimi Delta Attention, Attention Residuals, Stable LatentMoE, Quantile Balancing, SiTU-GLU, per-head
 Muon, MoonEP, and deployment-wide MXFP quantization are architecture/pretraining-system changes. They
@@ -913,20 +974,91 @@ snapshot excludes activations, KV cache, optimizer/training state, redundancy, a
 Hyperion should apply K3’s governance, budgeting, scheduling, verification, and experiment-design
 ideas to the smaller reviewed bases already in its catalog.
 
-### 15.5 Licence boundary
+### 15.5 Permission-managed access and reproducibility
 
-Kimi K3 uses a custom Kimi K3 License identified as `other` on the reviewed model card, not a standard
-OSI/permissive licence. The reviewed text requires notice retention; a separate Moonshot agreement
-for a qualifying Model-as-a-Service business and affiliates above US$20 million aggregate revenue in
-any consecutive 12 months; and prominent “Kimi K3” attribution for commercial products above stated
-monthly-active-user or revenue thresholds. Defined internal use and access through official/certified
-providers have specified exceptions. Counsel must review the current exact licence before any weight,
-derivative, hosting, or commercial use.
+Kimi K3's custom licence, any paid or gated model, and any separately negotiated research/service
+access are acquisition records rather than architecture exclusions. The accountable user or
+delegated operator owns account, payment, permission, attribution, renewal, and contractual review.
+The registry preserves the exact source/revision, acquired bytes, price/terms snapshot, permission
+owner, data-retention policy, and allowed Hyperion roles so experiments remain reproducible and can
+be revoked or replaced. A technically superior candidate stays eligible when required permission has
+been obtained.
 
-No Kimi code, weights, training data, prompt traces, or outputs were copied into Hyperion. The paper
-does not publish the complete pretraining/RL corpora, total tokens/FLOPs, full GPU schedule, or a
-reproducible end-to-end recipe; all performance and architecture claims remain source claims until
-independently reproduced.
+Hyperion still does not bypass access controls, copy undisclosed private material, or infer closed
+architecture details from benchmark scores. Kimi K3's report does not publish the complete
+pretraining/RL corpora, total tokens/FLOPs, full GPU schedule, or a reproducible end-to-end recipe;
+all performance and architecture claims remain source claims until independently reproduced. No
+Kimi code, weights, training data, prompt traces, or outputs were copied by this architecture review.
+
+### 15.6 Cross-family architecture decisions
+
+The source review includes GPT-5.6, gpt-oss, Kimi K3, Qwen3/Qwen3-Coder/Qwen3.5, DeepSeek V3/R1,
+GLM-5/5.2, Llama 4, Gemini 3.1 Pro, Claude Fable 5, MiniMax-M2.5, Devstral Small 2, and Falcon-H1.
+Closed models expose useful service capabilities but not reproducible internals. Open/downloadable
+models can be exact local teachers or students after snapshot/runtime validation.
+
+| Mechanism | Target use | Adoption gate |
+|---|---|---|
+| Dense decoder | Simplest student/training/serving baseline | Keep one dense baseline in every bake-off |
+| Sparse MoE | More capacity per active FLOP | Existing active-sparse bases first; measure routing, expert use, all-to-all, quality per joule |
+| GQA/MLA/latent KV | Lower KV memory and long-context cost | Upstream-supported implementation plus memory/latency/quality curves |
+| Sparse attention/IndexShare | Lower very-long-context compute | Research until implementation and length-stratified evidence are reproducible |
+| DeltaNet/KDA or Transformer-Mamba hybrid | Linear/recurrent long-context path with selective attention | Equal-compute small pretraining or Falcon-H1 challenger evaluation |
+| MTP/speculative heads | Extra training signal and faster decoding opportunity | Exact runtime support, acceptance, output parity, and tail-latency proof |
+| Native multimodality | UI screenshots, charts, PDFs, and repository reasoning | Hosted/large teacher first; sealed modality/privacy tests before student training |
+| FP8/MXFP4/MXFP8/QAT | Lower training/serving memory and cost | Separate promoted artifact with verifier parity and rollback |
+
+Reported million-token or multi-million-token windows are capacity claims, not proof that a model
+uses distant evidence correctly. Hyperion extends context only after shorter tasks are stable and
+tests retrieval dependency, recall position, distractors, memory, latency, and short-context
+non-regression.
+
+### 15.7 Target coordinator and agent runtime
+
+The implemented five-role workflow remains the safe baseline. The target runtime permits a bounded
+typed graph of planner, retriever/researcher, architect or quant analyst, coder/UI specialist,
+executor/tester, critic, risk judge, synthesizer, and human releaser. The deterministic controller—not
+the model—owns role schemas, graph width/depth, requests, tokens, tools, elapsed time, cost, artifacts,
+retry limits, approvals, and terminal states.
+
+Every trajectory event binds observation, role, model/adapter/effort, prompt or state hash, visible
+response, tool call/result, environment and verifier revisions, latency, tokens/cost, and terminal
+outcome. The controller can resume an explicit interrupted state and can run independent specialists
+in parallel, but a model cannot invent a role, tool, endpoint, credential, permission, or budget.
+
+Routing considers domain, difficulty, modality, context, tool need, data/privacy class, latency,
+credit budget, calibrated model quality, availability, and live queue/KV pressure. It freezes model,
+adapter, effort, sampling, retrieval, and fallback before charging. Low confidence or high risk routes
+to a stronger independent model or human review; it never routes around policy or readiness.
+
+### 15.8 Evaluation and promotion scorecard
+
+The target scorecard combines compile/test/numeric/risk correctness; source grounding; mutation and
+scaffold robustness; uncertainty calibration and abstention; tool schema/state/recovery; forbidden
+capability attempts; latency percentiles; tokens/tool calls; GPU seconds, energy and memory; credit
+cost; and human review burden. Report pass@1 and pass@k plus paired uncertainty. Public SWE-bench,
+LiveCodeBench, IFEval, HELM, tau-bench, ToolSandbox, WebArena, and OSWorld lanes are diagnostic;
+promotion uses a sealed Hyperion-domain suite with exact prompt, tool, environment, budget, sampling,
+and verifier identities.
+
+One candidate must beat the raw base and strongest promoted baseline on predeclared primary gates,
+stay within non-inferiority margins on every protected domain, survive contamination and
+reward-hacking audit, satisfy efficiency/capacity budgets, and pass independent replay plus human
+review. Activation binds the exact model, adapter, quantization, tokenizer/template, engine, image,
+arguments, policy, retrieval release, and report. Vendor benchmark tables never substitute for this.
+
+### 15.9 Target inference fabric
+
+Use an engine-neutral gateway with vLLM as the first self-hosted baseline, SGLang as the
+prefix/cache/structured-agent challenger, TensorRT-LLM after an NVIDIA model and quantization profile
+stabilises, and llama.cpp/CPU as an optional development or edge lane. Pin images, commits, model
+revisions, templates, arguments, and quantized artifacts.
+
+Continuous batching, chunked prefill, structured decoding, tenant-safe prefix/KV caches, streaming,
+cancellation, overload, and canary/rollback are gateway responsibilities. Benchmark speculative
+decoding, Medusa/EAGLE, disaggregated prefill/decode, AWQ/GPTQ/SmoothQuant, FP8, or MXFP only on real
+Hyperion traffic; require output/verifier parity, acceptance, memory, throughput, and tail-latency
+evidence. Unsupported provider fields fail closed rather than silently changing semantics.
 
 ## 16. Proposed small-GPU-cluster architecture
 
@@ -965,8 +1097,12 @@ fit guarantees.
 
 ### 16.3 Interconnect, storage, and power
 
-- Prefer at least 10/25 GbE for model/data distribution and artifact collection; measure before
-  assuming distributed-training viability. RDMA/NVLink benefits must be proven on the chosen stack.
+- Use 10 GbE only for management, model/data distribution, artifact collection, and independent
+  single-node jobs; it is not a distributed-training fabric.
+- Require measured 25 GbE or faster for any cross-node collective, and prefer qualified 100
+  GbE/RDMA for Tier C or sustained model/expert parallel work. Enable RDMA/RoCE/InfiniBand only
+  after fabric, MTU, congestion, isolation, and failure tests; prove NVLink benefits on the chosen
+  stack.
 - Keep pinned weight snapshots in central immutable storage and stage a verified read-only copy to
   local NVMe. Never train from a mutable Hugging Face cache.
 - Size local storage for base snapshot, quantized working copy, dataset snapshots, temporary outputs,
@@ -1003,6 +1139,27 @@ Training workers should not hold promotion, review, or deployment keys. Evaluati
 not write the training corpus. Verifier workers should not receive sealed expected answers or model
 weights. Control-plane compromise remains high impact; protect it with MFA, patching, backups,
 restricted administration, and auditable change control.
+
+### 16.6 Compute tiers and distributed stack
+
+| Tier | Workload | Default approach |
+|---|---|---|
+| A: one or two GPUs | 4B-14B dense and roughly 20B active-sparse QLoRA/SFT, evaluation, development serving | Single-node first; avoid sharding when the job fits |
+| B: four to eight homogeneous GPUs | 24B-70B adapters, longer context, parallel seeds, verifiable-RL rollouts | Slurm plus PyTorch FSDP/TorchTitan; add ZeRO only when measurements justify it |
+| C: multi-node fast fabric | 100B+ models, larger full tuning, MoE/expert parallelism, architecture pretraining | Megatron/DeepSpeed/context/expert parallel after full topology qualification |
+
+Use one scheduler for one GPU pool. Slurm is the first dedicated-cluster profile. Kubernetes with
+Volcano/Kueue and the NVIDIA GPU Operator is an alternative when multi-tenancy and always-on services
+justify its operational cost, not a second scheduler competing for the same devices. TRL is the
+first post-training implementation; veRL, OpenRLHF, NeMo RL, and Ray enter when rollout/training
+throughput—not algorithm correctness—is the measured bottleneck.
+
+Inventory `nvidia-smi topo -m`, run CUDA peer-to-peer checks and `nccl-tests`, and retain the
+bandwidth/latency matrix. Keep tensor/expert parallel groups inside fast NVLink domains and prefer
+data or pipeline parallelism across slower links. RDMA/RoCE/InfiniBand is accepted only after fabric,
+MTU, congestion, isolation, and fault tests. Actual fit must be measured from precision, total and
+active weights, sequence length, activations, optimizer, attention kernel, batch/accumulation,
+checkpointing, KV cache, and runtime—not from a parameter-count label.
 
 ## 17. Engineering workflow and operator runbooks
 
@@ -1062,7 +1219,8 @@ new version and repeat downstream gates.
 
 ### 17.5 Teacher runbook
 
-1. Confirm provider/weight licence permits the intended training use.
+1. Confirm the user-designated permission owner has recorded authorised acquisition/use, current
+   terms, attribution, data handling, and expiry for the provider or weights.
 2. Freeze teacher revision, tokenizer/template, runtime descriptor, and capture budget.
 3. Start the controlled loopback engine and create/revalidate its passive binding.
 4. Compile manifest v2 from source-grounded development rows; confirm references are absent.
@@ -1092,7 +1250,8 @@ unreviewed. There is no “best effort” promotion into SFT.
 
 1. Re-run complete candidate/baseline aggregation from exact bytes.
 2. Fully replay C# rows and obtain the distinct replay-audit signature.
-3. Review quality, regressions, cost/latency, safety, rights, licence, and operational capacity.
+3. Review quality, regressions, cost/latency, safety, the permission/provenance record, and
+   operational capacity.
 4. Issue a signed promotion with exact capability and expiry; do not reuse a research-only policy for
    strategy authoring.
 5. Prepare engine-wrapper v7 with immutable base/adapter/image and all trust roots.
@@ -1163,18 +1322,21 @@ legacy wire identities accidentally.
 | Phase | Work | Exit gate |
 |---|---|---|
 | 0. Repository baseline | Re-run all extracted .NET/Python/schema/format/boundary checks; establish CI and owners | Green reproducible commit; no secrets/weights; documented provenance |
-| 1. Governed corpus | Expand rights-clean rows, independent correctness/source decisions, receipts, teacher lineage where used, evaluation authoring | Signed release plus corpus admission; meaningful domain/task coverage; no sealed leakage |
+| 1. Governed corpus | Expand permission-recorded rows, independent correctness/source decisions, receipts, teacher lineage where used, evaluation authoring | Signed release plus corpus admission; meaningful domain/task coverage; no sealed leakage |
 | 2. Cluster and custody | Build/burn in workers, immutable storage, denied egress, telemetry, external signers and revocation | Repeated deterministic smoke; incident/restore/key-rotation exercises pass |
-| 3. Raw-base bake-off | Run every catalog student and baseline under one frozen condition | Signed selection v2 over complete matrix and exact snapshot |
-| 4. QLoRA pilot | Run bounded SFT, safe tree sealing, external trainer provenance, multi-seed comparison | Artifact v2; reproducible improvement without critical/per-domain regression |
-| 5. Evaluation/promotion | Full sealed aggregation, C# replay audit, human/safety/cost review | Independent signed promotion with rollback target and bounded capability |
-| 6. Serving rollout | Engine-wrapper v7, readiness, remote auth, credits, staged shadow/cohort deployment | Stable SLOs, reconciliation, security sign-off, rollback drill |
-| 7. Advanced research | Effort adapters, diverse scaffolds, preference/RLVR, multi-teacher or architecture ablations | Each change independently beats the simpler accepted baseline |
+| 3. Raw-base bake-off | Run the production catalog plus retrieval/no-retrieval comparisons; evaluate registry challengers separately | Signed selection v2 over complete production matrix and exact snapshot |
+| 4. Expert-student pilot | Run bounded verified SFT, then DPO only if SFT passes; seal safe artifacts and compare multiple seeds | Reproducible improvement over raw base and strongest baseline without protected-domain regression |
+| 5. Verifiable reasoning | Compare RLOO/GRPO on compiler/test/math/risk rewards; train isolated domain/effort adapters and router | Reward-hacking audit, specialist gates, calibrated routing, and bounded efficiency all pass |
+| 6. Evaluation/promotion | Full sealed aggregation, C# replay audit, human/safety/cost review | Independent signed promotion with rollback target and bounded capability |
+| 7. Serving rollout | Engine-wrapper v7, vLLM/SGLang comparison, readiness, remote auth, credits, staged shadow/cohort deployment | Stable SLOs, reconciliation, security sign-off, rollback drill |
+| 8. Multi-teacher scale-out | Domain-calibrated teachers, on-policy distillation where probabilities/logits are authorised, persistent agent rollouts | Beats sequence-SFT and routed specialists under identical sealed conditions |
+| 9. Architecture research | Equal-compute KDA/DeltaNet, sparse-attention, Mamba-hybrid, MTP, MoE, multimodal and quantisation ablations | Each mechanism independently beats the simpler accepted baseline before scale-up |
 
-Stop rather than advance when rights are ambiguous, sealed custody is compromised, signer separation
-is unavailable, the runtime/snapshot drifts, the evaluator is gameable, critical failures appear,
-gains vanish across seeds, cost/latency exceeds policy, or rollback cannot be demonstrated. More
-infrastructure cannot substitute for missing real evidence.
+Stop rather than advance when the required access/permission owner has not supplied an authoritative
+source and permission record, sealed custody is compromised, signer separation is unavailable, the
+runtime/snapshot drifts, the evaluator is gameable, critical failures appear, gains vanish across
+seeds, cost/latency exceeds policy, or rollback cannot be demonstrated. More infrastructure cannot
+substitute for missing real evidence.
 
 The first legitimate “trained Hyperion” milestone requires, at minimum: governed SFT bytes; signed
 base selection and corpus admission; a conforming GPU run; finalized artifact v2 with trainer
@@ -1262,6 +1424,8 @@ installation, runtime-risk, broker, and order approvals are satisfied outside th
 
 - `README.md` — repository scope, aliases, build entrypoints, and evidence boundary.
 - `docs/architecture/source-provenance.md` — exact originating revisions and extraction boundary.
+- `docs/architecture/hyperion-frontier-architecture.md` — canonical target model portfolio,
+  training ladder, agent runtime, inference fabric, and cluster design.
 - `docs/guides/hyperion-coordinator.md` — hosted workflow and operator/data contracts.
 - `docs/research/hyperion-expert-model.md` — detailed model, corpus, evaluation, signing, and serving design.
 - `docs/research/kimi-k3-adoption-notes.md` — pinned K3 source review and adoption analysis.
@@ -1272,6 +1436,10 @@ installation, runtime-risk, broker, and order approvals are satisfied outside th
 
 ### 22.2 Model, distillation, and training research
 
+Online primary sources in sections 22.2-22.4 were accessed 31 July 2026. Model cards, services,
+framework APIs, availability, prices, and terms are version-sensitive and must be re-pinned for a
+real acquisition or experiment.
+
 - Hinton et al., “Distilling the Knowledge in a Neural Network,”
   https://arxiv.org/abs/1503.02531.
 - Hsieh et al., “Distilling Step-by-Step,” https://arxiv.org/abs/2305.02301.
@@ -1279,12 +1447,38 @@ installation, runtime-risk, broker, and order approvals are satisfied outside th
 - Hu et al., “LoRA,” https://arxiv.org/abs/2106.09685.
 - Dettmers et al., “QLoRA,” https://arxiv.org/abs/2305.14314.
 - Rafailov et al., “Direct Preference Optimization,” https://arxiv.org/abs/2305.18290.
+- Ahmadian et al., “Back to Basics: Revisiting REINFORCE Style Optimization for Learning from Human
+  Feedback in LLMs” (RLOO), https://arxiv.org/abs/2402.14740.
+- DeepSeek-AI, “DeepSeekMath” (GRPO), https://arxiv.org/abs/2402.03300.
+- Lightman et al., “Let's Verify Step by Step,” https://arxiv.org/abs/2305.20050.
+- Agarwal et al., “On-Policy Distillation of Language Models” (GKD),
+  https://arxiv.org/abs/2306.13649.
 - Lambert et al., “Tülu 3,” https://arxiv.org/abs/2411.15124.
 - Hui et al., “Qwen2.5-Coder Technical Report,” https://arxiv.org/abs/2409.12186.
 - Qwen Team, “Qwen3 Technical Report,” https://arxiv.org/abs/2505.09388.
 - DeepSeek-AI, DeepSeek-R1 report/repository, https://github.com/deepseek-ai/DeepSeek-R1.
 
-### 22.3 Kimi K3 primary sources
+### 22.3 Frontier-model and Kimi K3 primary sources
+
+- OpenAI, latest-model guide, https://developers.openai.com/api/docs/guides/latest-model, and
+  gpt-oss repository, https://github.com/openai/gpt-oss.
+- Qwen, Qwen3, https://github.com/QwenLM/Qwen3; Qwen3-Coder,
+  https://github.com/QwenLM/Qwen3-Coder; and Qwen3.5-397B-A17B,
+  https://huggingface.co/Qwen/Qwen3.5-397B-A17B.
+- DeepSeek-AI, DeepSeek-V3, https://github.com/deepseek-ai/DeepSeek-V3, and
+  DeepSeek-V3.2-Exp, https://github.com/deepseek-ai/DeepSeek-V3.2-Exp.
+- Z.ai, GLM-5, https://github.com/zai-org/GLM-5, and GLM-5.2,
+  https://z.ai/blog/glm-5.2.
+- Meta, Llama 4 architecture announcement,
+  https://ai.meta.com/blog/llama-4-multimodal-intelligence/.
+- Google DeepMind, Gemini 3.1 Pro model card,
+  https://deepmind.google/models/model-cards/gemini-3-1-pro/.
+- Anthropic, Claude Fable 5/Mythos 5 announcement,
+  https://www.anthropic.com/news/claude-fable-5-mythos-5.
+- MiniMax, MiniMax-M2.5 model card, https://huggingface.co/MiniMaxAI/MiniMax-M2.5.
+- TII, Falcon-H1-34B model card, https://huggingface.co/tiiuae/Falcon-H1-34B-Base.
+- Mistral, Devstral Small 2 24B model card,
+  https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512.
 
 - Kimi Team, “Kimi K3: Open Frontier Intelligence,” https://arxiv.org/abs/2607.24653.
 - Official report snapshot at reviewed commit:
@@ -1298,9 +1492,24 @@ installation, runtime-risk, broker, and order approvals are satisfied outside th
 
 - Jimenez et al., “SWE-bench,” https://arxiv.org/abs/2310.06770.
 - Jain et al., “LiveCodeBench,” https://arxiv.org/abs/2403.07974.
+- Yao et al., “ReAct,” https://arxiv.org/abs/2210.03629.
+- Zhou et al., “tau-bench,” https://arxiv.org/abs/2406.12045, and Wu et al.,
+  “ToolSandbox,” https://arxiv.org/abs/2408.04682.
+- Liang et al., “HELM,” https://arxiv.org/abs/2211.09110, and Zhou et al., “IFEval,”
+  https://arxiv.org/abs/2311.07911.
 - Anthropic, “Building effective agents,”
   https://www.anthropic.com/research/building-effective-agents.
 - vLLM serving documentation, https://docs.vllm.ai/en/latest/cli/serve/.
+- SGLang repository, https://github.com/sgl-project/sglang, and NVIDIA TensorRT-LLM,
+  https://github.com/NVIDIA/TensorRT-LLM.
+- Dao et al., “FlashAttention,” https://arxiv.org/abs/2205.14135, and FlashAttention-2,
+  https://arxiv.org/abs/2307.08691.
+- PyTorch FSDP, https://docs.pytorch.org/docs/stable/fsdp.html, and TorchTitan,
+  https://github.com/pytorch/torchtitan.
+- DeepSpeed ZeRO, https://arxiv.org/abs/1910.02054, and NVIDIA Megatron-LM,
+  https://github.com/NVIDIA/Megatron-LM.
+- Slurm documentation, https://slurm.schedmd.com/documentation.html, and NVIDIA NCCL,
+  https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/.
 - Python Packaging Authority, PEP 751, https://peps.python.org/pep-0751/.
 - Astral, `uv pip compile`, https://docs.astral.sh/uv/pip/compile/.
 - IETF RFC 7518 §3.4 (ECDSA/JWA),

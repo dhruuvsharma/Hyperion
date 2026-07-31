@@ -1,6 +1,6 @@
 # Kimi K3 research review for Hyperion
 
-Status: primary-source review, 30 July 2026. This note is an engineering interpretation, not a
+Status: primary-source review, updated 31 July 2026. This note is an engineering interpretation, not a
 reproduction or an endorsement of Moonshot AI's claims.
 
 ## Source verification
@@ -64,14 +64,16 @@ budgets for request classes.
 | Dynamic scheduling | Admit work from live queue depth, active requests, GPU memory, and KV-cache pressure. Separate short inference, long-context rollout, training, and evaluation budgets. | Load tests proving one workload cannot starve the others. |
 | MicroVM isolation | Move adversarial agent/RL execution beyond ordinary containers to microVM or separate-host isolation with controlled egress and immutable images. | Escape/threat-model review, image provenance, host attestation, and incident runbook. |
 
-## Research-only ideas, not drop-in improvements
+## Pretraining research tracks, not drop-in adapter changes
 
 Kimi Delta Attention, Attention Residuals, Stable LatentMoE, Quantile Balancing, SiTU-GLU,
-per-head Muon, MoonEP, and deployment-wide MXFP quantization are architecture or pretraining-system
-changes. They cannot be added faithfully through QLoRA on an existing base. Hyperion should test
-them only in small ablation models after a dense baseline, corpus, evaluator, and cluster telemetry
-are reliable. MoE is especially premature until real interconnect and expert-parallel utilization
-justify its operational complexity.
+per-head Muon, MoonEP, and deployment-wide MXFP quantization are now explicit Hyperion architecture
+research tracks. They cannot be added faithfully through QLoRA on an existing base. Test each in a
+small equal-data/equal-compute ablation against dense attention and conventional MoE before combining
+mechanisms or scaling. Measure long-context dependency quality, optimisation stability, router
+balance, expert utilisation, all-to-all cost, memory, tokens/second, energy, and quality per joule.
+MoE scale-up starts only when the real interconnect and expert-parallel profile justify its
+operational complexity.
 
 Faithful on-policy distillation also needs teacher token probabilities or logits. Ordinary hosted
 API text samples can support verified sequence-level SFT, but they are not a substitute for the
@@ -85,15 +87,19 @@ redundancy add multiples of that footprint. The useful near-term path is to appl
 evaluation, budgeting, and data ideas to smaller reviewed open-weight bases already present in
 Hyperion's candidate catalog.
 
-## License and reproducibility limits
+## Permission-managed access and reproducibility limits
 
-The Kimi K3 weights use the custom Kimi K3 License, identified as `other` by the model card, not a
-standard OSI/permissive model license. It requires notice retention. It also requires a separate
-Moonshot agreement when a qualifying Model-as-a-Service business and affiliates exceed US$20M
-aggregate revenue over any consecutive 12 months, and prominent “Kimi K3” UI attribution for
-commercial products above the stated monthly-active-user or monthly-revenue thresholds. The
-license exempts defined internal use and access through official/certified inference providers from
-those two special conditions. Counsel must review the exact current license before commercial use.
+Kimi K3's custom licence and any paid, gated, or separately negotiated access are provenance and
+acquisition records, not architecture exclusions. The user or delegated operator owns permission,
+payment, attribution, renewal, and contractual decisions. Hyperion records the exact licence/terms
+snapshot, source and acquired revision, accountable owner, permitted roles, data handling, and expiry
+so the experiment can be reproduced, revoked, or replaced. The current reviewed licence requires
+notice retention and contains additional service/attribution conditions; the permission owner must
+record how the chosen access path satisfies the current terms before use.
+
+Hyperion does not bypass access controls or claim undisclosed vendor details. A permitted Kimi K3 API
+or weight deployment may serve as a teacher, critic, or large-cluster challenger, while the full
+2.78T/104.2B-active system remains outside the proposed small-cluster student tier.
 
 The report and weights do not provide the complete pretraining corpus, RL corpus, total pretraining
 tokens, full training FLOPs, complete GPU schedule, or a reproducible end-to-end recipe. Benchmark

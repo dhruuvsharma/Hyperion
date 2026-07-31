@@ -7,13 +7,13 @@ import argparse
 import re
 import textwrap
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 
 from PIL import Image, ImageDraw, ImageFont
 from docx import Document
-from docx.enum.section import WD_SECTION
 from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK, WD_TAB_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.opc.constants import RELATIONSHIP_TYPE
@@ -78,7 +78,8 @@ def arrow(draw: ImageDraw.ImageDraw, start: tuple[int, int], end: tuple[int, int
 
 def layered_diagram(path: Path, title: str, subtitle: str,
                     layers: list[tuple[str, list[str], str]]) -> None:
-    image = Image.new("RGB", (1800, 1040), "#F7F9FB")
+    image_height = max(1040, 275 + len(layers) * 186)
+    image = Image.new("RGB", (1800, image_height), "#F7F9FB")
     draw = ImageDraw.Draw(image)
     title_font = font("regular", 52, True)
     subtitle_font = font("regular", 25)
@@ -184,6 +185,18 @@ def build_diagrams(asset_dir: Path) -> None:
             ("Storage", ["Versioned corpus", "Immutable artifacts", "Model/cache mirror"], "#DDECF7"),
             ("GPU pool", ["Trainer rank 0", "Trainer ranks 1..N", "Evaluation/serving"], "#E8F4EC"),
             ("Isolation", ["Verifier microVM", "Restricted egress", "Backup + restore"], "#FFF4D6"),
+        ],
+    )
+    layered_diagram(
+        asset_dir / "hyperion-frontier-model-factory.png",
+        "Hyperion frontier model factory",
+        "Models propose; governed evidence, independent verification, and human release grant authority.",
+        [
+            ("Authority", ["Registry + policy", "Budgets + credits", "Promotion + rollback"], "#E8EEF5"),
+            ("Knowledge", ["Reviewed corpus", "Versioned private RAG", "Sealed evaluation"], "#DDECF7"),
+            ("Teachers", ["Hosted frontier", "Open large models", "Critics + judges"], "#FFF4D6"),
+            ("Student factory", ["Raw-base bake-off", "SFT / DPO / RLVR", "Specialists + router"], "#E8F4EC"),
+            ("Runtime", ["Coordinator + tools", "Verifier + replay", "Inference + GPU cluster"], "#E8EEF5"),
         ],
     )
 
@@ -317,7 +330,11 @@ def add_inline(paragraph, value: str, *, base_bold: bool = False) -> None:
             add_hyperlink(paragraph, link_match.group(1), link_match.group(2))
         elif token.startswith("http"):
             url = token.rstrip(".,;")
-            add_hyperlink(paragraph, url, url)
+            parsed = urlparse(url)
+            path_parts = [unquote(part) for part in parsed.path.split("/") if part]
+            path_label = "/".join(path_parts[-2:]) if path_parts else "source"
+            link_label = f"{parsed.netloc.removeprefix('www.')} / {path_label}"
+            add_hyperlink(paragraph, link_label, url)
             if len(url) < len(token):
                 paragraph.add_run(token[len(url):])
         else:
@@ -419,7 +436,7 @@ def add_cover(document: Document) -> None:
     document.add_paragraph().paragraph_format.space_after = Pt(38)
     kicker = document.add_paragraph()
     kicker.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = kicker.add_run("PRIVATE ENGINEERING HANDBOOK  •  VERSION 1.0")
+    run = kicker.add_run("PRIVATE ENGINEERING HANDBOOK  •  VERSION 1.1")
     run.bold = True
     run.font.size = Pt(10)
     run.font.color.rgb = RGBColor.from_string(BLUE)
@@ -448,7 +465,7 @@ def add_cover(document: Document) -> None:
     band_shading.set(qn("w:fill"), NAVY)
     band_properties.append(band_shading)
     run = band.add_run(
-        "Coordinator • model-evidence pipeline • isolated verifier\n"
+        "Coordinator • frontier model factory • isolated verifier\n"
         "For ML, platform, safety, and operations teams"
     )
     run.font.size = Pt(12)
@@ -456,7 +473,7 @@ def add_cover(document: Document) -> None:
     run.font.color.rgb = RGBColor(255, 255, 255)
     document.add_paragraph().paragraph_format.space_after = Pt(54)
     for label, value in (
-        ("DATE", "30 July 2026"),
+        ("DATE", "31 July 2026"),
         ("REPOSITORY", "github.com/dhruuvsharma/Hyperion"),
         ("CLASSIFICATION", "Private engineering material"),
         ("STATUS", "Infrastructure implemented; no trained Hyperion checkpoint or production deployment"),
@@ -766,9 +783,9 @@ def build(source: Path, output: Path) -> None:
     configure_styles(document)
     configure_document(document)
     document.core_properties.title = "Hyperion LLM Coordinator Engineering Handbook"
-    document.core_properties.subject = "Architecture, model evidence, verifier safety, and ML operations"
+    document.core_properties.subject = "Frontier model architecture, model evidence, verifier safety, and ML operations"
     document.core_properties.author = "Hyperion Engineering"
-    document.core_properties.keywords = "Hyperion, LLM coordinator, QLoRA, verifier, model governance"
+    document.core_properties.keywords = "Hyperion, LLM coordinator, distillation, RLVR, QLoRA, verifier, model governance"
     document.core_properties.comments = "Private engineering material"
     settings = document.settings.element
     language = settings.find(qn("w:themeFontLang"))

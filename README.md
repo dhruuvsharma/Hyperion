@@ -1,9 +1,10 @@
 # Hyperion
 
-Hyperion is a private, evidence-gated LLM coordinator for expert strategy authoring. It combines a
-durable multi-role coordinator, rights- and review-aware corpus tooling, open-weight model training
-and evaluation infrastructure, signed promotion/readiness contracts, a constrained C# verifier,
-and a hosted execution adapter.
+Hyperion is a private, evidence-gated LLM coordinator and expert-model portfolio for strategy
+authoring. It combines a durable multi-role coordinator, provenance- and review-aware corpus
+tooling, hosted and downloadable teacher integration, small-model distillation/training and
+evaluation infrastructure, signed promotion/readiness contracts, a constrained C# verifier, and a
+hosted execution adapter.
 
 This repository was extracted from DaxAlgo Terminal Pro at commit
 `003685a92e7ddba9e4149d3bb545f4ce82446f3e`. Its shared Core/SDK dependency is pinned as the
@@ -15,8 +16,8 @@ not a development target for Hyperion after this extraction.
 - Implemented: coordinator workflows, durable state, OpenAI-compatible and replay providers,
   dataset/review/release gates, retrieval packs, evaluation and promotion evidence, runtime wrappers,
   detached signing handoffs, hosted API integration, and the isolated C# verifier.
-- Verified in this repository: 537 .NET tests, 492 Python tests (plus three expected Windows
-  symlink-capability skips), 113 schemas with 2,029 resolved references, all CLI help surfaces, and
+- Verified in this repository: 537 .NET tests, 494 Python tests (plus five expected Windows
+  POSIX/symlink-capability skips), 113 schemas with 2,029 resolved references, all CLI help surfaces, and
   the digest-pinned verifier Docker build.
 - Not yet established: a rights-approved training corpus, production signing custody, a conforming
   GPU-cluster run, trained weights, a checkpoint, benchmark superiority, or production deployment.
@@ -54,6 +55,7 @@ engineer handbook for the migration policy, security model, cluster plan, and Ki
 
 ## Documentation
 
+- [Frontier expert-model architecture](docs/architecture/hyperion-frontier-architecture.md)
 - [Hyperion engineering handbook](docs/engineering/hyperion-llm-coordinator-handbook.md)
   ([Word](docs/engineering/hyperion-llm-coordinator-handbook.docx),
   [PDF](docs/engineering/hyperion-llm-coordinator-handbook.pdf))
