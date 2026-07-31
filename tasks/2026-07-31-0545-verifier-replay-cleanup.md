@@ -1,5 +1,5 @@
 # Verifier replay cleanup race
-Status: active
+Status: complete
 
 ## Goal
 Close the Windows replay-workspace cleanup race exposed by hosted CI after an intentional candidate
@@ -53,6 +53,9 @@ process crash, without accepting residual candidate artifacts or weakening the v
   and coordinator headless 218. The solution formatting gate passed.
 - `git diff --check` passes; the three edited C#/project files remain BOM-less UTF-8 CRLF. `public/`
   is clean and pinned unchanged at `ae19c5eb7ab7b3c6d6e1a5647fc127a838e6dd05`.
+- Publication commit `93b77087f8522aaca1cfc9c8d0f9a3c1d36e3f2b` passed Hyperion CI run
+  `30605721647`: Windows restore/build/all 541 tests/formatting and Linux Python tests/Ruff
+  lint/Ruff formatting/compile/CLI discovery all completed successfully.
 
 ## Residual limits
 - A same-user or privileged actor can still race path ownership within the previously documented
