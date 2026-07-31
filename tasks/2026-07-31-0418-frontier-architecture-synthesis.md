@@ -96,6 +96,9 @@ architectural exclusion, while preserving source provenance and honest implement
   clipping, overflow, missing image, blank page, broken flow, or unreadable table.
 - Python model-tool regression: 494 passed and five expected Windows POSIX/symlink-capability tests
   skipped in 515.51 seconds. The edited builder passes Ruff lint and `py_compile`.
+- Hosted publication evidence: commit `3b3e38dc4b6cdf3b1d4681d6ed08bba8f05e283c` passed Hyperion
+  CI run `30604317039`; Windows restore/build/test/.NET formatting and Linux Python test/Ruff
+  lint/Ruff formatting/compile/CLI discovery all completed successfully.
 - `python -m ruff format --check tools/docs/build_hyperion_handbook.py` still reports the builder's
   pre-existing whole-file formatter drift (a mechanical rewrite would touch 327 lines); it was not
   applied because it is unrelated churn. The model-tool package formatter was not affected.
