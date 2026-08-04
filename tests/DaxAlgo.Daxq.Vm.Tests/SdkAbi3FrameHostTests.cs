@@ -123,7 +123,9 @@ public sealed class SdkAbi3FrameHostTests
         var bars = Enumerable.Range(1, 100).Select(value => Bar(value)).ToArray();
         var host = new DaxqSdkAbi3FrameHost(bars, new double[] { 1 }, bars.Length - 1);
         Assert.Equal(DaxqFault.Ok, host.ReadIndicator(1, 12, 4, out _));
+        Assert.Equal(DaxqFault.Ok, host.ReadIndicator(2, 12, 4, out _));
         Assert.Equal(DaxqFault.Ok, host.ReadIndicator(3, 14, 4, out _));
+        Assert.Equal(DaxqFault.Ok, host.ReadIndicator(4, 14, 4, out _));
 
         var before = GC.GetAllocatedBytesForCurrentThread();
         for (var index = 0; index < 1_000; index++)

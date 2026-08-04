@@ -18,7 +18,11 @@ public sealed class FaultAndBudgetTests
         AssertReferenceFault(DivideByZeroProgram(), DaxqNullHost.Instance, DaxqFault.DivideByZero);
         AssertReferenceFault(NonFiniteHostProgram(), new NonFiniteHost(), DaxqFault.Numeric);
         AssertReferenceFault(BadBufferIndexProgram(), DaxqNullHost.Instance, DaxqFault.IndexOutOfRange);
-        AssertReferenceFault(InstructionLoopProgram(), DaxqNullHost.Instance, DaxqFault.InstructionBudget);
+        AssertReferenceFault(
+            InstructionLoopProgram(),
+            DaxqNullHost.Instance,
+            DaxqFault.InstructionBudget,
+            FrozenClock.Instance);
         AssertReferenceFault(StackBudgetProgram(), DaxqNullHost.Instance, DaxqFault.StackBudget);
         AssertReferenceFault(TimeoutProgram(), new SlowHost(), DaxqFault.Timeout);
         AssertReferenceFault(EffectLimitProgram(), DaxqNullHost.Instance, DaxqFault.EffectLimit);
@@ -119,9 +123,10 @@ public sealed class FaultAndBudgetTests
     private static void AssertReferenceFault(
         DaxqTestContainerBuilder builder,
         IDaxqHost host,
-        DaxqFault expected)
+        DaxqFault expected,
+        IDaxqMonotonicClock? clock = null)
     {
-        var vm = new DaxqReferenceVm(Load(builder), host, 77);
+        var vm = new DaxqReferenceVm(Load(builder), host, 77, clock: clock);
         var result = vm.OnBar(0);
         Assert.Equal(expected, result.Fault);
         Assert.Empty(vm.EmittedSignals.ToArray());
@@ -355,6 +360,19 @@ public sealed class FaultAndBudgetTests
             value = 1;
             return DaxqFault.Ok;
         }
+    }
+
+    private sealed class FrozenClock : IDaxqMonotonicClock
+    {
+        private FrozenClock()
+        {
+        }
+
+        public static FrozenClock Instance { get; } = new();
+
+        public long Frequency => 1;
+
+        public long GetTimestamp() => 0;
     }
 
     private sealed class AdvancingClock : IDaxqMonotonicClock

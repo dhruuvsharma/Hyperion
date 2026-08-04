@@ -30,11 +30,15 @@ well-labelled ML-engineering handbook as synchronized Markdown, DOCX, and PDF ar
 
 ## Blast radius
 - Private documentation, document-generation code/assets, generated DOCX/PDF, and this task record.
-- No runtime, signed wire, model weight, checkpoint, secret, or `public/` change is planned.
+- Hosted/local closure test-harness hardening is limited to the observed scheduling defects;
+  production runtime, signed wire, model weight, checkpoint, secret, and `public/` code remain out
+  of scope.
 
 ## Build filter
-- Documentation builder and document/PDF QA only unless source inspection proves otherwise.
-- Full model/runtime suites are unnecessary unless implementation code changes.
+- Documentation builder and document/PDF QA, plus focused and full Platform API tests for any
+  hosted-closure test-harness hardening.
+- Full model/runtime suites remain required once before publication; repeat only affected closure
+  suites after a test-only determinism change.
 
 ## Tests to run
 - Primary-source version/date/claim audit and URL checks.
@@ -69,6 +73,27 @@ well-labelled ML-engineering handbook as synchronized Markdown, DOCX, and PDF ar
 - The handbook is now version 1.2 with seven labelled diagrams and a 49-page PDF. Diagram status
   badges distinguish tested repository infrastructure from target, research, and externally blocked
   work; labelled arrows state the records that cross each boundary.
+- Private CI run `30943868102` passed the complete Python job on its first attempt. Its Windows job
+  first exposed a signal-session latency assertion that measured database mutation time as well as
+  post-commit revocation latency (`2.5823993s` against a `2s` bound). Attempt 2 passed that test but
+  exposed a different race: the real Vibe Quant background worker could take a manually claimed run
+  before the test, because a `60s` idle poll does not delay the worker's first claim.
+- The manual-lease race reproduced locally once in 20 focused runs. The adjacent credit-reservation
+  test uses the same slow-poll assumption and reproduced twice in 20 focused runs. Existing tests
+  already remove `VibeQuantWorker` when they own claims manually, so the bounded closure is to reuse
+  that helper at both affected factories. The signal test retains its post-mutation `3s` receive
+  cancellation as the bounded liveness assertion and drops the redundant `2s` wall-clock check,
+  which included database work and queued-frame drain time. No production change is justified.
+- A subsequent full local solution run kept Platform green at 150/150 but exposed an independent VM
+  fixture ambiguity: the real 25ms OnBar watchdog legitimately beat the 100,000-instruction limit
+  under concurrent-project scheduler load. The VM project passed 41/41 alone. The instruction-budget
+  assertion now injects a frozen monotonic clock, isolating that budget class without changing the
+  production watchdog order or limits; the dedicated timeout assertions retain advancing/real clocks.
+- The next parallel solution run passed that budget assertion and again kept Platform green, then
+  exposed order-dependent JIT warm-up in the indicator zero-allocation test: measurement exercised
+  SMA and ATR although setup had warmed only EMA and RSI. The fixture now warms all four measured
+  indicator branches before sampling current-thread allocations; the hot-path implementation is
+  unchanged.
 
 ## Diff summary
 - Updated `docs/research/kimi-k3-adoption-notes.md` with exact live revisions, hashes, DOI status,
@@ -81,7 +106,11 @@ well-labelled ML-engineering handbook as synchronized Markdown, DOCX, and PDF ar
 - Extended `tools/docs/build_hyperion_handbook.py` and its README to generate the seven native,
   status-labelled diagrams, substantive figure descriptions, source/version guards, and accurate
   Word core/extended properties.
-- No runtime, signed wire, model artifact, secret, checkpoint, or `public/` file changed.
+- Hardened four test fixtures exposed by parallel closure: two Vibe Quant factories now explicitly
+  remove the background worker when the test owns queue state, signal revocation keeps its `3s`
+  bounded receive without a redundant pre-commit `2s` wall-clock assertion, the instruction-budget
+  fixture uses a frozen test clock, and the allocation fixture warms every measured indicator path.
+- No production runtime, signed wire, model artifact, secret, checkpoint, or `public/` file changed.
 
 ## Verification
 - Live K3 source/revision/hash/DOI and page-reference audit: passed; a separate read-only audit found
@@ -105,6 +134,10 @@ well-labelled ML-engineering handbook as synchronized Markdown, DOCX, and PDF ar
   warnings and zero errors; all 541 tests passed (44 Contracts, 41 VM, 41 Compiler, 47 VerifierWorker,
   150 Platform API, and 218 coordinator headless). `dotnet format Hyperion.slnx
   --verify-no-changes --no-restore --exclude public` passed.
+- Post-hardening closure: the three affected Platform tests passed 60/60 across 20 rebuilt runs and
+  the full Platform project passed 150/150; the two affected VM tests passed 40/40 across 20 rebuilt
+  runs and the VM project passed 41/41. The final parallel solution run passed all 541 tests with the
+  same suite counts above, and full solution formatting verification passed again.
 - Shared context structural `check` passed. The byte-oriented generator check is affected by global
   `core.autocrlf=true`: all 88 generated shard working files differ raw but match their index blobs
   through Git filters. A CRLF-normalized generator comparison still identifies 16 genuinely stale
@@ -112,7 +145,9 @@ well-labelled ML-engineering handbook as synchronized Markdown, DOCX, and PDF ar
 - Root/shared diff checks, strict UTF-8 without BOM, LF/final-newline/trailing-whitespace checks,
   untracked secret/key/model-weight screening, clean pinned submodule status, and private GitHub
   repository visibility passed.
-- Hosted private-repository CI: pending the publication commit.
+- Hosted private-repository CI run `30943868102`: Python passed; Windows attempt 1 exposed the
+  redundant signal deadline and attempt 2 exposed the worker-claim race. A new run for the bounded
+  test-harness closure is pending publication.
 
 ## Risks / deferred
 - The pinned shared Core context requires an upstream refresh for six index shards (`Charts`, `Core`,

@@ -282,7 +282,7 @@ public sealed class VibeQuantApiTests
     [Fact]
     public async Task CompetingRunsCannotOverspendAndCancellationRefundsTheReservation()
     {
-        await using var factory = new PlatformApiFactory(workerPollMilliseconds: 60_000);
+        await using var factory = new PlatformApiFactory(RemoveVibeQuantWorker);
         const string subject = "vibe-quant-competing-runs";
         using var client = CreateAuthenticatedClient(factory, subject);
         var accountId = await BootstrapAsync(factory, client, subject);
@@ -460,7 +460,7 @@ public sealed class VibeQuantApiTests
     [Fact]
     public async Task ExpiredWorkerLeaseIsReclaimedAndStaleCompletionIsFenced()
     {
-        await using var factory = new PlatformApiFactory(workerPollMilliseconds: 60_000);
+        await using var factory = new PlatformApiFactory(RemoveVibeQuantWorker);
         const string subject = "vibe-quant-lease-recovery";
         using var client = CreateAuthenticatedClient(factory, subject);
         var accountId = await BootstrapAsync(factory, client, subject);
