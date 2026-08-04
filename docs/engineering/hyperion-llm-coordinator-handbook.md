@@ -2,8 +2,8 @@
 
 ## Engineering handbook for the ML, platform, and safety teams
 
-**Version:** 1.1
-**Date:** 31 July 2026
+**Version:** 1.2
+**Date:** 5 August 2026
 **Classification:** Private engineering material
 **Repository:** `dhruuvsharma/Hyperion`
 **Audience:** ML engineers, research engineers, platform engineers, security reviewers, and technical operators
@@ -191,6 +191,14 @@ a classified failure. Implementations are:
 Provider validation rejects unsafe endpoint/configuration combinations and preserves a credential
 as a reference, not as persisted run data. Hosted execution constructs the provider server-side;
 the desktop cannot choose a private model artifact, retrieval pack, price, or readiness identity.
+
+The target provider contract also needs an explicit capability record for effort levels, structured
+tool fields, continuation state, caching, and retention. These semantics are not interchangeable
+across vendors. For example, the reviewed Kimi K3 model card exposes `low`, `high`, and `max` effort
+and requires the complete prior assistant message—including reasoning and tool state—for compatible
+multi-turn continuation. Hyperion must keep any such provider-private state encrypted, tenant/model
+scoped, expiry-bound, and absent from ordinary logs, human rationale, corpus rows, and training data.
+Unsupported semantics fail or use an explicitly evaluated fallback; they are never silently mapped.
 
 ### 4.5 State machine and approvals
 
@@ -918,9 +926,13 @@ source of architecture and agent-training ideas inside that portfolio, not the o
 ### 15.1 Verified source and scale
 
 The reviewed primary source is Kimi Team, “Kimi K3: Open Frontier Intelligence,” arXiv:2607.24653v1,
-submitted 27 July 2026. The reviewed official report was pinned to MoonshotAI/Kimi-K3 commit
-`7c5be9599120d7993748de66a76128614f15f210`; the 47-page PDF hash recorded by the research review is
-`936a7a3b655947b014ba96b8a790c3cdb6ea8b37eea514e4b7b52655e20af0f8`.
+submitted 27 July 2026. A live 5 August check found no newer arXiv revision. MoonshotAI/Kimi-K3
+`main` remains at commit `7c5be9599120d7993748de66a76128614f15f210`; the arXiv-generated
+47-page PDF has SHA-256 `936a7a3b655947b014ba96b8a790c3cdb6ea8b37eea514e4b7b52655e20af0f8`,
+while the official repository's separately generated 47-page report has SHA-256
+`1f2978d89a9d7f138f6d6ae5f17fd6890dc673abeaea7fca96c1eca432c75ce8`.
+The arXiv page exposes `10.48550/arXiv.2607.24653` as an arXiv-issued DataCite DOI pending
+registration. The two report PDFs are not byte-identical, so claims cite the exact reviewed snapshot.
 
 Moonshot reports a native multimodal mixture-of-experts model with 2.78 trillion total parameters,
 104.2 billion activated per token, 93 layers, and a 1,048,576-token maximum context. The architecture
@@ -944,7 +956,28 @@ dynamic queue/KV-cache throttling, and separate budgets for workload classes.
 
 These are system lessons, not a recipe Hyperion has reproduced.
 
-### 15.3 Adopt now
+### 15.3 Paper-to-Hyperion decision map
+
+![Kimi K3 to Hyperion adoption decision map](assets/hyperion-kimi-k3-adoption-map.png)
+
+*Reading guide — green items enter Hyperion's target contracts and experiments; amber items require a
+controlled base/runtime-specific evaluation; blue items require equal-compute pretraining research;
+the red boundary prevents direct QLoRA-retrofit and small-cluster-scale claims.*
+
+| Primary-source area | Reported design | Hyperion decision | Evidence status |
+|---|---|---|---|
+| Section 2, pages 3–10 | KDA/Gated MLA, Attention Residuals, Stable LatentMoE, Quantile Balancing, SiTU-GLU, per-head Muon | Pretraining research only | Literature reviewed; no Hyperion ablation |
+| Sections 3.3–3.4, pages 11–12 | Native multimodal training and progressive 8K→64K→256K→1M context extension | Length curriculum only after short-context stability and dependency-focused tests | Target design; no long-context run |
+| Sections 4.1.1–4.1.3, pages 12–14 | Verified trajectory SFT, nine domain/effort RL specialists, MOPD | Verified SFT and routed specialists first; consolidation only with authorised probabilities/logits | Infrastructure only; no reviewed corpus or specialist |
+| Sections 4.1.2 and 4.2.6, pages 13 and 16 | Per-task budgets, outcome-state rewards, public/hidden verifiers, limited submissions | Adopt budget-conditioned evaluation and independent hidden verification | Target contracts; no K3 result reproduced |
+| Section 4.1.4, page 14 | QAT throughout post-training and an MTP-derived EAGLE-3 draft trained toward acceptance | Controlled student-specific evaluation | Research target only |
+| Sections 5.3–5.4, pages 21–25 | External KV pool, auto-throttling, resumable microVMs, cache affinity, request-class budgets | Adopt scheduling/state-lifecycle principles at measured Hyperion scale | No production cluster |
+| Appendix F, pages 46–47, and model card | Scope-aware options, indexed/typed tool calls, preserved reasoning/tool continuation state | Provider capability mapping plus a restricted continuation-state lane | Architecture update; current wire unchanged |
+
+The diagram and table classify source claims; they do not copy K3 code, confer production authority,
+or convert paper results into Hyperion evidence.
+
+### 15.4 Adopt now
 
 | K3 lesson | Hyperion action now | Required evidence |
 |---|---|---|
@@ -954,15 +987,22 @@ These are system lessons, not a recipe Hyperion has reproduced.
 | Partial/resumable rollouts | Persist policy, sandbox/context state, budget, harness, verifier, and staleness window | Deterministic resume and off-policy stability tests |
 | Dynamic scheduling | Partition short inference, long context, rollout, training, and evaluation queues using live memory/KV/queue signals | Load tests proving fairness and bounded starvation |
 | Progressive context | Extend context only after shorter-context quality is stable and distant evidence is necessary | Length-stratified quality, memory, latency, and short-context non-regression |
-| Structured transcripts | Separate roles, visible answers, tool calls/results, scope, and provider state; avoid retaining hidden reasoning | Round-trip/provider tests and privacy review |
+| Structured transcripts | Separate roles, visible answers, indexed tool calls/results, scope, and restricted provider state; never present provider reasoning as human rationale | Round-trip/provider tests, field-level retention/deletion, and privacy review |
+| Provider capability mapping | Version supported effort names, option scope, continuation semantics, tool schema, and fallback for each exact model revision | Unsupported-field failure, parity across multi-turn/tool sessions, and no silent aliasing |
+| Structured judge scorepad | Require inspected output, bound rubric, criterion scores, evidence references, and a verbosity guard for non-verifiable qualities | Judge disagreement/calibration, rubric mutation, verbosity gaming, and human correlation |
+| Quantization-consistent evidence | When the selected base supports it, bind training, rollout, evaluation, and serving precision to one artifact identity | Float/quantized verifier parity, calibration, memory/throughput, portability, and rollback |
 | Stronger sandboxing | Plan microVM/separate-host execution for adversarial agent/RL workloads | Threat model, provenance, egress, attestation, and incident exercises |
 
-### 15.4 Pretraining research tracks
+### 15.5 Pretraining research tracks
 
 Kimi Delta Attention, Attention Residuals, Stable LatentMoE, Quantile Balancing, SiTU-GLU, per-head
-Muon, MoonEP, and deployment-wide MXFP quantization are architecture/pretraining-system changes. They
-cannot be faithfully added to Qwen or gpt-oss with QLoRA. Test them only in small ablation models
-after the dense/adapted baseline, evaluator, and cluster telemetry are trustworthy.
+Muon, and MoonEP are backbone, optimizer, or distributed-system changes. They cannot be faithfully
+added to Qwen or gpt-oss with QLoRA. Test them only in small ablation models after the dense/adapted
+baseline, evaluator, and cluster telemetry are trustworthy.
+
+MXFP4-weight/MXFP8-activation QAT is instead deployment-aware post-training: the report starts it at
+SFT and aligns rollout/training precision. Hyperion treats it as a selected-base/hardware experiment
+whose float-versus-quantized verifier parity, calibration, memory, throughput, and rollback must pass.
 
 Faithful on-policy distillation requires teacher token probabilities or logits. Hosted text samples
 support verified sequence-level SFT, not the per-token K3 objective. Multi-teacher consolidation is
@@ -974,7 +1014,7 @@ snapshot excludes activations, KV cache, optimizer/training state, redundancy, a
 Hyperion should apply K3’s governance, budgeting, scheduling, verification, and experiment-design
 ideas to the smaller reviewed bases already in its catalog.
 
-### 15.5 Permission-managed access and reproducibility
+### 15.6 Permission-managed access and reproducibility
 
 Kimi K3's custom licence, any paid or gated model, and any separately negotiated research/service
 access are acquisition records rather than architecture exclusions. The accountable user or
@@ -990,7 +1030,7 @@ pretraining/RL corpora, total tokens/FLOPs, full GPU schedule, or a reproducible
 all performance and architecture claims remain source claims until independently reproduced. No
 Kimi code, weights, training data, prompt traces, or outputs were copied by this architecture review.
 
-### 15.6 Cross-family architecture decisions
+### 15.7 Cross-family architecture decisions
 
 The source review includes GPT-5.6, gpt-oss, Kimi K3, Qwen3/Qwen3-Coder/Qwen3.5, DeepSeek V3/R1,
 GLM-5/5.2, Llama 4, Gemini 3.1 Pro, Claude Fable 5, MiniMax-M2.5, Devstral Small 2, and Falcon-H1.
@@ -1013,7 +1053,7 @@ uses distant evidence correctly. Hyperion extends context only after shorter tas
 tests retrieval dependency, recall position, distractors, memory, latency, and short-context
 non-regression.
 
-### 15.7 Target coordinator and agent runtime
+### 15.8 Target coordinator and agent runtime
 
 The implemented five-role workflow remains the safe baseline. The target runtime permits a bounded
 typed graph of planner, retriever/researcher, architect or quant analyst, coder/UI specialist,
@@ -1031,7 +1071,7 @@ credit budget, calibrated model quality, availability, and live queue/KV pressur
 adapter, effort, sampling, retrieval, and fallback before charging. Low confidence or high risk routes
 to a stronger independent model or human review; it never routes around policy or readiness.
 
-### 15.8 Evaluation and promotion scorecard
+### 15.9 Evaluation and promotion scorecard
 
 The target scorecard combines compile/test/numeric/risk correctness; source grounding; mutation and
 scaffold robustness; uncertainty calibration and abstention; tool schema/state/recovery; forbidden
@@ -1047,7 +1087,7 @@ reward-hacking audit, satisfy efficiency/capacity budgets, and pass independent 
 review. Activation binds the exact model, adapter, quantization, tokenizer/template, engine, image,
 arguments, policy, retrieval release, and report. Vendor benchmark tables never substitute for this.
 
-### 15.9 Target inference fabric
+### 15.10 Target inference fabric
 
 Use an engine-neutral gateway with vLLM as the first self-hosted baseline, SGLang as the
 prefix/cache/structured-agent challenger, TensorRT-LLM after an NVIDIA model and quantization profile
@@ -1055,10 +1095,14 @@ stabilises, and llama.cpp/CPU as an optional development or edge lane. Pin image
 revisions, templates, arguments, and quantized artifacts.
 
 Continuous batching, chunked prefill, structured decoding, tenant-safe prefix/KV caches, streaming,
-cancellation, overload, and canary/rollback are gateway responsibilities. Benchmark speculative
-decoding, Medusa/EAGLE, disaggregated prefill/decode, AWQ/GPTQ/SmoothQuant, FP8, or MXFP only on real
-Hyperion traffic; require output/verifier parity, acceptance, memory, throughput, and tail-latency
-evidence. Unsupported provider fields fail closed rather than silently changing semantics.
+cancellation, overload, and canary/rollback are gateway responsibilities. Cache-aware affinity may
+pin a session to a primary worker plus a bounded failover target; separate admission budgets protect
+short inference, long context, rollout, training, and sealed evaluation using queue, active-request,
+memory, and KV-pressure signals. Benchmark speculative decoding, Medusa/EAGLE, disaggregated
+prefill/decode, AWQ/GPTQ/SmoothQuant, FP8, or MXFP only on real Hyperion traffic. For a compatible
+MTP/draft path, compare an acceptance-rate-oriented objective with ordinary KL training. Every pilot
+must prove output/verifier parity, acceptance, failover cost, memory, throughput, and tail latency.
+Unsupported provider fields fail closed rather than silently changing semantics.
 
 ## 16. Proposed small-GPU-cluster architecture
 
@@ -1436,9 +1480,9 @@ installation, runtime-risk, broker, and order approvals are satisfied outside th
 
 ### 22.2 Model, distillation, and training research
 
-Online primary sources in sections 22.2-22.4 were accessed 31 July 2026. Model cards, services,
-framework APIs, availability, prices, and terms are version-sensitive and must be re-pinned for a
-real acquisition or experiment.
+Online primary sources in sections 22.2-22.4 were accessed 31 July 2026; Kimi K3 sources were
+rechecked 5 August 2026. Model cards, services, framework APIs, availability, prices, and terms are
+version-sensitive and must be re-pinned for a real acquisition or experiment.
 
 - Hinton et al., “Distilling the Knowledge in a Neural Network,”
   https://arxiv.org/abs/1503.02531.

@@ -1,7 +1,7 @@
 # Hyperion handbook build
 
 The authored source is `docs/engineering/hyperion-llm-coordinator-handbook.md`. The builder creates
-the six native PNG diagrams and the Word deliverable; LibreOffice or Microsoft Word can then export
+the seven native PNG diagrams and the Word deliverable; LibreOffice or Microsoft Word can then export
 the DOCX to PDF.
 
 ```powershell

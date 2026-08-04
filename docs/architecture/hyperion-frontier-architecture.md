@@ -1,6 +1,6 @@
 # Hyperion frontier expert-model architecture
 
-Date: 31 July 2026
+Date: 5 August 2026
 Status: target architecture; implementation is staged and evidence-gated
 Audience: ML research, data, platform, inference, evaluation, security, and product engineering
 
@@ -177,7 +177,7 @@ Licence or cost can affect an operator's acquisition decision but is not a techn
 
 ### 5.2 Current frontier inventory
 
-The following is a source-reviewed architecture inventory as of 31 July 2026, not a promotion list.
+The following is a source-reviewed architecture inventory as of 5 August 2026, not a promotion list.
 
 | Family | Publicly disclosed design/useful fact | Hyperion use | Adoption state |
 |---|---|---|---|
@@ -213,6 +213,25 @@ not compared directly because prompts, tools, sampling, budgets, hardware, and s
 | RoPE scaling/YaRN/iRoPE | Extend context without full retraining | Conditional runtime profile, never a marketing number | Length-stratified dependency tasks, perplexity, memory, latency |
 | FP8/MXFP4/MXFP8/QAT | Reduce training/serving cost | Use upstream-supported formats after exact-artifact evaluation | Accuracy and verifier parity, kernel/hardware portability, rollback |
 | Attention Residuals/Stable LatentMoE/Muon variants | Potential scaling, optimisation, and expert-routing gains | Kimi-inspired small-model research track | Isolated ablations before combined-scale claims |
+
+### 5.4 Kimi K3 adoption boundary
+
+The 5 August 2026 recheck found no arXiv revision after `2607.24653v1`; Moonshot's official
+repository remains at `7c5be9599120d7993748de66a76128614f15f210`, and the public model snapshot
+remains `9f62e4e9fffbd0a83ddd60e1c209d828994b3569`. Hyperion uses the following explicit
+decision boundary rather than treating the K3 report as one indivisible recipe.
+
+| K3 source area | Hyperion decision | Why | Required proof |
+|---|---|---|---|
+| Effort-conditioned specialists, per-task budgets, outcome-state rewards, hidden verifiers | Adopt in the target workflow and experiment contracts | Fits the existing authority and evaluation model without changing a student backbone | Budget-conditioned quality/cost curves, hidden-case stability, reward-hacking audit |
+| Scope-aware options, indexed tool calls, preserved continuation state | Adopt as provider-capability and transcript requirements, not as a copied template | Prevents silent semantic loss across providers while keeping private state separate from human rationale | Round-trip parity, field-level retention/deletion, provider-policy and privacy review |
+| Cache-pressure throttling, cache-aware affinity, request-class budgets, resumable sandboxes | Adopt as operations targets at measured Hyperion scale | Protects short work and preserves long-running state without assuming K3-scale hardware | Load/failover tests, bounded re-prefill, starvation and recovery evidence |
+| Routed effort/domain adapters, structured judge scorepads, quantization-consistent training/serving, acceptance-aware draft models | Controlled evaluation | Each depends on the selected base, runtime, data, and independent quality evidence | Frozen baselines, verifier parity, calibration, acceptance, latency, memory, rollback |
+| KDA, Attention Residuals, Stable LatentMoE, Quantile Balancing, SiTU-GLU, per-head Muon, MoonEP | Equal-compute pretraining research only | These change the backbone, optimiser, or distributed system and cannot be faithfully added by QLoRA | Isolated multi-seed ablations, topology telemetry, quality per token/cost/joule |
+| Full 2.78T/104.2B-active K3 training on the proposed small cluster | Reject as the student plan | The public compressed snapshot alone is about 1.42 TiB before runtime or training state | A separately funded large-cluster plan would require its own capacity and custody review |
+
+These rows change the target architecture and experiment backlog; they do not claim a Hyperion K3
+integration, copied implementation, trained specialist, reproduced benchmark, or production runtime.
 
 ## 6. Data and retrieval design
 
@@ -288,6 +307,10 @@ Process reward models can provide auxiliary credit assignment, but executable ou
 where available. DAPO/large asynchronous RL systems are later pilots after small-scale correctness,
 reward-hacking audits, and reproducible gains.
 
+For long-horizon or non-verifiable work, bind a per-task token/tool/time budget and require a
+structured judge record: inspected outcome, rubric identity, criterion scores, evidence references,
+and verbosity guard. Judge output never overrides deterministic failure or human release.
+
 ### Stage 4: on-policy and multi-teacher distillation
 
 Route each prompt to teachers that passed a domain-specific calibration suite. Preserve disagreements
@@ -339,6 +362,11 @@ queue/KV pressure. The router selects model, adapter, effort, sampling profile, 
 fallback. It emits a reason code and confidence; low confidence or high risk invokes a stronger model
 or human review. Provider/model identity is frozen into the invocation before charging.
 
+Effort is a provider capability, not a universal string. The registry records the supported levels,
+token semantics, defaults, and mapping for each exact revision. A request for an unsupported level
+fails or follows an explicitly evaluated fallback; Hyperion never silently maps K3's
+`low`/`high`/`max`, another provider's `medium`/`xhigh`, or an internal token budget onto each other.
+
 ### 8.3 Tools and environments
 
 Every tool has a versioned JSON schema, capability class, allowed roles, filesystem/network scope,
@@ -346,17 +374,27 @@ timeout, byte/result limits, idempotency semantics, audit redaction policy, and 
 mutation tools, execution tools, signing, deployment, and trading authority are separate. Generated
 strategy source remains inert; it cannot install itself, access a broker, or place an order.
 
+The normalized transcript keeps user-visible response, indexed tool calls, typed arguments, tool
+results, scope, and provider extension state distinct. Global session options, one-request options,
+and dynamically introduced tools are separately versioned so a cache or replay cannot apply an
+option outside its scope. Provider-native templates such as K3's XTML remain behind adapters; they
+are not copied into the cross-provider contract.
+
 ### 8.4 Memory
 
-Hyperion uses three explicit memory classes:
+Hyperion uses four explicit memory classes:
 
 1. immutable run/event memory for recovery and audit;
 2. versioned retrieval memory for shared/private knowledge; and
-3. optional user-approved summaries with source lineage, expiry, tenant, and deletion.
+3. optional user-approved summaries with source lineage, expiry, tenant, and deletion; and
+4. restricted provider continuation state required for multi-turn fidelity, encrypted and isolated
+   by tenant, provider, model revision, purpose, and expiry.
 
 Hidden chain-of-thought is not required for audit. Store visible rationale, claims, sources, tool
-events, decisions, and verifier results. Provider-private state is referenced only when the provider
-contract and privacy policy permit it.
+events, decisions, and verifier results. A provider such as Kimi K3 may require its complete prior
+assistant message, including reasoning and tool state, for compatible continuation; that state is
+not human rationale, ordinary logging, a corpus row, or training data. Retain it only when the
+provider contract and privacy policy permit it, and measure a stateless or compaction fallback.
 
 ## 9. Evaluation and promotion
 
@@ -411,8 +449,13 @@ changing semantics.
 - continuous batching and chunked prefill are controlled by latency-class queues;
 - prefix/KV caching keys include model, adapter, template, policy, retrieval/context, and privacy
   identity; tenant-private cache entries are never shared;
+- cache-aware affinity may pin a session to a primary worker/cluster plus a bounded failover target;
+  failover cost and cold re-prefill are measured rather than hidden;
+- separate admission budgets protect short inference, long context, rollout, training, and sealed
+  evaluation from one another using queue, active-request, memory, and KV-pressure signals;
 - speculative decoding, Medusa, or EAGLE is a measured pilot whose acceptance, tail latency, memory,
-  and output-distribution parity must pass;
+  and output-distribution parity must pass; when a compatible MTP/draft path exists, compare an
+  acceptance-rate-oriented objective with ordinary KL training;
 - FlashAttention is consumed through supported framework/runtime paths before custom kernels;
 - AWQ, GPTQ, SmoothQuant, FP8, and MXFP formats are separate promoted artifacts, not runtime flags
   applied to an unmeasured checkpoint;
@@ -557,8 +600,8 @@ Passing infrastructure tests alone does not satisfy these conditions.
 
 ## 16. Primary sources
 
-All online sources below were accessed 31 July 2026. Version-sensitive claims must be rechecked before
-an experiment or purchase.
+All online sources below were accessed 31 July 2026 and the Kimi K3 sources were rechecked 5 August
+2026. Version-sensitive claims must be rechecked before an experiment or purchase.
 
 ### 16.1 Models and architecture
 

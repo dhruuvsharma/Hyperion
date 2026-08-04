@@ -6,19 +6,20 @@ from __future__ import annotations
 import argparse
 import re
 import textwrap
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
-from PIL import Image, ImageDraw, ImageFont
 from docx import Document
 from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
+from docx.opc.constants import RELATIONSHIP_TYPE
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.opc.constants import RELATIONSHIP_TYPE
 from docx.shared import Inches, Pt, RGBColor
-
+from lxml import etree
+from PIL import Image, ImageDraw, ImageFont
 
 BLUE = "2E74B5"
 DARK_BLUE = "1F4D78"
@@ -29,6 +30,58 @@ PALE_GREEN = "E8F4EC"
 PALE_RED = "FBE9E7"
 GREY = "66727F"
 CONTENT_DXA = 9360
+HANDBOOK_VERSION = "1.2"
+HANDBOOK_DATE = "5 August 2026"
+HANDBOOK_EXPECTED_PAGES = 49
+HANDBOOK_RELEASED_UTC = datetime(2026, 8, 4, 18, 30, tzinfo=timezone.utc)
+STATUS_STYLES = {
+    "IMPLEMENTED": "2E74B5",
+    "TARGET": "2B7A4B",
+    "RESEARCH": "A66B00",
+    "EXTERNAL / BLOCKED": "A33B30",
+}
+IMAGE_DESCRIPTIONS = {
+    "assets/hyperion-system-architecture.png": (
+        "Four-layer Hyperion architecture. Implemented client and coordination components send labelled "
+        "requests, approvals, frozen specifications, and bound verification requests downward. Model-evidence "
+        "and safety layers return quotes, inert artifacts, results, usage, and verifier evidence upward. Status "
+        "badges distinguish implemented repository infrastructure from target, research, and externally blocked work."
+    ),
+    "assets/hyperion-run-state-machine.png": (
+        "Hyperion run states Created, Running, Awaiting approval, Released, Cancelled, and Failed. Labelled arrows "
+        "show start, candidate-ready, human-approval, cancellation or policy-stop, cleanup-fault, and retry or resume "
+        "transitions; every transition is persisted with optimistic concurrency and hash-chained events."
+    ),
+    "assets/hyperion-evidence-lifecycle.png": (
+        "Data, training, evaluation, and serving evidence layers connected by labelled evidence flows. Status badges "
+        "show which contracts and harnesses exist and which production reviews, checkpoints, sealed tasks, or runtime "
+        "attestation remain target or externally blocked."
+    ),
+    "assets/hyperion-trust-chain.png": (
+        "Trust chain from evidence producers through independent review and detached signing to coordinator, hosted "
+        "platform, and deployment consumers. Bidirectional arrows label evidence bundles, findings, canonical "
+        "preimages, signatures, signed envelopes, and verification results; status badges expose missing production "
+        "reviewers, signer custody, and KMS or HSM integration."
+    ),
+    "assets/hyperion-frontier-model-factory.png": (
+        "Five-layer model factory covering authority, knowledge, teachers, student training, and runtime. Labelled "
+        "flows carry policy gates, authorised examples, teacher traces, training specifications, candidates, metrics, "
+        "accepted artifacts, telemetry, and rollback evidence. Status badges separate tested infrastructure from "
+        "research, targets, and external blockers."
+    ),
+    "assets/hyperion-kimi-k3-adoption-map.png": (
+        "Decision map from specific Kimi K3 report areas through Hyperion's evidence and feasibility gate. The map "
+        "routes agent contracts and hidden verification to immediate adoption, quantisation and serving mechanisms to "
+        "controlled evaluation, and backbone mechanisms to equal-compute pretraining research, while explicitly "
+        "rejecting a direct full-model or QLoRA retrofit."
+    ),
+    "assets/hyperion-gpu-cluster-topology.png": (
+        "Proposed small-cluster topology with control, storage, GPU, and isolation layers. Labelled arrows show signed "
+        "run specifications, read-only snapshots, checkpoints, metrics, verification requests, verdicts, and recovery "
+        "proof. Status badges show that immutable artifact contracts exist while the cluster, production corpus, KMS, "
+        "GPU workers, and several isolation controls remain target or externally blocked."
+    ),
+}
 
 
 def font(name: str, size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -44,12 +97,24 @@ def font(name: str, size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
     return ImageFont.load_default()
 
 
-def wrapped(draw: ImageDraw.ImageDraw, value: str, box: tuple[int, int, int, int],
-            value_font: ImageFont.FreeTypeFont, fill: str, spacing: int = 8) -> None:
+def wrapped(
+    draw: ImageDraw.ImageDraw,
+    value: str,
+    box: tuple[int, int, int, int],
+    value_font: ImageFont.FreeTypeFont,
+    fill: str,
+    spacing: int = 8,
+) -> None:
     x1, y1, x2, y2 = box
     width = max(12, int((x2 - x1) / max(value_font.getlength("M"), 1)))
-    lines = textwrap.wrap(value, width=width, break_long_words=False)
-    metrics = draw.multiline_textbbox((0, 0), "\n".join(lines), font=value_font, spacing=spacing)
+    lines: list[str] = []
+    for paragraph in value.splitlines():
+        lines.extend(
+            textwrap.wrap(paragraph, width=width, break_long_words=False) or [""]
+        )
+    metrics = draw.multiline_textbbox(
+        (0, 0), "\n".join(lines), font=value_font, spacing=spacing
+    )
     height = metrics[3] - metrics[1]
     draw.multiline_text(
         ((x1 + x2) / 2, (y1 + y2 - height) / 2),
@@ -76,38 +141,109 @@ def arrow(draw: ImageDraw.ImageDraw, start: tuple[int, int], end: tuple[int, int
     draw.polygon(points, fill=color)
 
 
-def layered_diagram(path: Path, title: str, subtitle: str,
-                    layers: list[tuple[str, list[str], str]]) -> None:
-    image_height = max(1040, 275 + len(layers) * 186)
+def layered_diagram(
+    path: Path,
+    title: str,
+    subtitle: str,
+    layers: list[tuple[str, list[tuple[str, str]], str]],
+    edge_labels: list[tuple[str, str]],
+) -> None:
+    if len(edge_labels) != len(layers) - 1:
+        raise ValueError(
+            "Layered diagrams require one labelled edge pair between each layer"
+        )
+    image_height = max(1120, 370 + len(layers) * 238)
     image = Image.new("RGB", (1800, image_height), "#F7F9FB")
     draw = ImageDraw.Draw(image)
     title_font = font("regular", 52, True)
     subtitle_font = font("regular", 25)
     label_font = font("regular", 24, True)
-    box_font = font("regular", 23, True)
+    box_font = font("regular", 22, True)
+    status_font = font("regular", 15, True)
+    edge_font = font("regular", 18, True)
     draw.text((90, 68), title, font=title_font, fill="#17324D")
     draw.text((90, 136), subtitle, font=subtitle_font, fill="#66727F")
-    row_top = 225
-    row_height = 132
-    row_gap = 54
+    draw.text((90, 205), "STATUS", font=font("regular", 19, True), fill="#1F4D78")
+    legend_x = 205
+    for status, status_color in STATUS_STYLES.items():
+        pill_width = int(status_font.getlength(status)) + 36
+        draw.rounded_rectangle(
+            (legend_x, 190, legend_x + pill_width, 226),
+            radius=18,
+            fill=f"#{status_color}",
+        )
+        draw.text(
+            (legend_x + pill_width / 2, 208),
+            status,
+            font=status_font,
+            fill="#FFFFFF",
+            anchor="mm",
+        )
+        legend_x += pill_width + 18
+    row_top = 280
+    row_height = 158
+    row_gap = 80
     for index, (label, boxes, fill) in enumerate(layers):
         y1 = row_top + index * (row_height + row_gap)
         y2 = y1 + row_height
-        draw.text((90, y1 + 51), label.upper(), font=label_font, fill="#1F4D78", anchor="lm")
+        draw.text(
+            (90, y1 + row_height / 2),
+            label.upper(),
+            font=label_font,
+            fill="#1F4D78",
+            anchor="lm",
+        )
         x_start = 385
         available = 1325
         gap = 28
         box_width = int((available - gap * (len(boxes) - 1)) / len(boxes))
-        centers: list[tuple[int, int]] = []
-        for box_index, box in enumerate(boxes):
+        for box_index, (box, status) in enumerate(boxes):
+            if status not in STATUS_STYLES:
+                raise ValueError(f"Unsupported diagram status: {status}")
             x1 = x_start + box_index * (box_width + gap)
             x2 = x1 + box_width
-            draw.rounded_rectangle((x1, y1, x2, y2), radius=20, fill=fill, outline="#2E74B5", width=3)
-            wrapped(draw, box, (x1 + 18, y1 + 12, x2 - 18, y2 - 12), box_font, "#17324D")
-            centers.append(((x1 + x2) // 2, y2))
+            status_color = STATUS_STYLES[status]
+            draw.rounded_rectangle(
+                (x1, y1, x2, y2),
+                radius=20,
+                fill=fill,
+                outline=f"#{status_color}",
+                width=4,
+            )
+            pill_width = min(box_width - 28, int(status_font.getlength(status)) + 32)
+            draw.rounded_rectangle(
+                (x1 + 14, y1 + 12, x1 + 14 + pill_width, y1 + 45),
+                radius=16,
+                fill=f"#{status_color}",
+            )
+            draw.text(
+                (x1 + 14 + pill_width / 2, y1 + 28),
+                status,
+                font=status_font,
+                fill="#FFFFFF",
+                anchor="mm",
+            )
+            wrapped(
+                draw, box, (x1 + 18, y1 + 50, x2 - 18, y2 - 12), box_font, "#17324D"
+            )
         if index < len(layers) - 1:
             next_y = row_top + (index + 1) * (row_height + row_gap)
-            arrow(draw, (1048, y2 + 6), (1048, next_y - 8), "#6888A5")
+            down_label, up_label = edge_labels[index]
+            edge_mid = (y2 + next_y) / 2
+            arrow(draw, (835, y2 + 8), (835, next_y - 8), "#6888A5")
+            arrow(draw, (1210, next_y - 8), (1210, y2 + 8), "#6888A5")
+            draw.text(
+                (810, edge_mid), down_label, font=edge_font, fill="#4D6A82", anchor="rm"
+            )
+            draw.text(
+                (1235, edge_mid), up_label, font=edge_font, fill="#4D6A82", anchor="lm"
+            )
+    draw.text(
+        (90, image_height - 60),
+        "IMPLEMENTED means repository code/test evidence; it never means a trained or deployed model.",
+        font=font("regular", 20, True),
+        fill="#7A2E28",
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     image.save(path, dpi=(180, 180))
 
@@ -115,28 +251,231 @@ def layered_diagram(path: Path, title: str, subtitle: str,
 def state_diagram(path: Path) -> None:
     image = Image.new("RGB", (1800, 900), "#F7F9FB")
     draw = ImageDraw.Draw(image)
-    draw.text((90, 68), "One run, explicit states", font=font("regular", 52, True), fill="#17324D")
-    draw.text((90, 136), "Resumability and human release are part of the protocol, not UI decoration.",
-              font=font("regular", 25), fill="#66727F")
+    draw.text(
+        (90, 68),
+        "One run, explicit states",
+        font=font("regular", 52, True),
+        fill="#17324D",
+    )
+    draw.text(
+        (90, 136),
+        "Resumability and human release are part of the protocol, not UI decoration.",
+        font=font("regular", 25),
+        fill="#66727F",
+    )
     nodes = [
-        ("Created", f"#{PALE_BLUE}"), ("Running", f"#{PALE_BLUE}"), ("Awaiting approval", f"#{PALE_GOLD}"),
-        ("Released", f"#{PALE_GREEN}"), ("Cancelled", f"#{PALE_RED}"), ("Failed", f"#{PALE_RED}"),
+        ("Created", f"#{PALE_BLUE}"),
+        ("Running", f"#{PALE_BLUE}"),
+        ("Awaiting approval", f"#{PALE_GOLD}"),
+        ("Released", f"#{PALE_GREEN}"),
+        ("Cancelled", f"#{PALE_RED}"),
+        ("Failed", f"#{PALE_RED}"),
     ]
-    positions = [(110, 290), (400, 290), (690, 290), (1050, 290), (690, 610), (400, 610)]
+    positions = [
+        (110, 290),
+        (400, 290),
+        (690, 290),
+        (1050, 290),
+        (690, 610),
+        (400, 610),
+    ]
     width, height = 235, 120
     for (label, fill), (x, y) in zip(nodes, positions):
-        draw.rounded_rectangle((x, y, x + width, y + height), radius=20, fill=fill, outline="#2E74B5", width=3)
-        wrapped(draw, label, (x + 12, y + 10, x + width - 12, y + height - 10), font("regular", 24, True), "#17324D")
+        draw.rounded_rectangle(
+            (x, y, x + width, y + height),
+            radius=20,
+            fill=fill,
+            outline="#2E74B5",
+            width=3,
+        )
+        wrapped(
+            draw,
+            label,
+            (x + 12, y + 10, x + width - 12, y + height - 10),
+            font("regular", 24, True),
+            "#17324D",
+        )
     arrow(draw, (345, 350), (392, 350))
     arrow(draw, (635, 350), (682, 350))
     arrow(draw, (925, 350), (1042, 350))
     arrow(draw, (807, 418), (807, 602), "#A66B00")
     arrow(draw, (690, 670), (643, 670), "#A33B30")
     arrow(draw, (517, 602), (517, 418), "#6888A5")
-    draw.text((1120, 318), "human release", font=font("regular", 20), fill="#4D6A82")
-    draw.text((836, 500), "cancel / policy stop", font=font("regular", 20), fill="#7F5C13")
-    draw.text((90, 805), "Every transition is persisted with optimistic concurrency and hash-chained events.",
-              font=font("regular", 24, True), fill="#17324D")
+    transition_font = font("regular", 18, True)
+    draw.text((368, 325), "start", font=transition_font, fill="#4D6A82", anchor="ms")
+    draw.text(
+        (658, 325), "candidate ready", font=transition_font, fill="#4D6A82", anchor="ms"
+    )
+    draw.text(
+        (985, 325), "human approve", font=transition_font, fill="#4D6A82", anchor="ms"
+    )
+    draw.text((836, 500), "cancel / policy stop", font=transition_font, fill="#7F5C13")
+    draw.text(
+        (666, 646), "cleanup fault", font=transition_font, fill="#7A2E28", anchor="rm"
+    )
+    draw.text((540, 500), "retry / resume", font=transition_font, fill="#4D6A82")
+    draw.text(
+        (90, 805),
+        "Every transition is persisted with optimistic concurrency and hash-chained events.",
+        font=font("regular", 24, True),
+        fill="#17324D",
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    image.save(path, dpi=(180, 180))
+
+
+def kimi_adoption_diagram(path: Path) -> None:
+    """Draw the evidence-gated Kimi K3 adoption map used by the handbook."""
+    image = Image.new("RGB", (1800, 1250), "#F7F9FB")
+    draw = ImageDraw.Draw(image)
+    draw.text(
+        (90, 62),
+        "Kimi K3 to Hyperion: adoption decision map",
+        font=font("regular", 48, True),
+        fill="#17324D",
+    )
+    draw.text(
+        (90, 128),
+        "Paper claims pass an evidence-and-fit gate before they become target work.",
+        font=font("regular", 24),
+        fill="#66727F",
+    )
+
+    sources = [
+        "Architecture\n§2–3",
+        "Post-training\n§4",
+        "Agent infrastructure\n§5",
+        "Template + model card\nAppendix F",
+    ]
+    source_left = 110
+    source_gap = 24
+    source_width = 372
+    source_top = 205
+    source_bottom = 330
+    for index, label in enumerate(sources):
+        left = source_left + index * (source_width + source_gap)
+        right = left + source_width
+        draw.rounded_rectangle(
+            (left, source_top, right, source_bottom),
+            radius=18,
+            fill="#E8EEF5",
+            outline="#2E74B5",
+            width=3,
+        )
+        wrapped(
+            draw,
+            label,
+            (left + 18, source_top + 12, right - 18, source_bottom - 12),
+            font("regular", 22, True),
+            "#17324D",
+        )
+        centre = (left + right) // 2
+        arrow(draw, (centre, source_bottom + 5), (centre, 370), "#6888A5")
+
+    gate = (110, 380, 1690, 485)
+    draw.rounded_rectangle(gate, radius=20, fill="#DDECF7", outline="#1F4D78", width=4)
+    wrapped(
+        draw,
+        "HYPERION EVIDENCE + FEASIBILITY GATE — exact revision • rights • reproducibility • "
+        "small-cluster fit • independent evaluation",
+        (145, 392, 1655, 473),
+        font("regular", 22, True),
+        "#17324D",
+    )
+
+    decisions = [
+        (
+            "ADOPT IN TARGET",
+            "#E8F4EC",
+            [
+                "Effort, token, time, and cost budgets",
+                "Typed transcript and provider capability map",
+                "Hidden verifier and submission limits",
+                "Queue/KV admission and cache affinity",
+            ],
+        ),
+        (
+            "CONTROLLED EVALUATION",
+            "#FFF4D6",
+            [
+                "Routed specialists before consolidation",
+                "Structured judge scorepad and verbosity guard",
+                "Resumable microVM rollouts",
+                "QAT and acceptance-aware draft model",
+            ],
+        ),
+        (
+            "PRETRAINING RESEARCH",
+            "#E8EEF5",
+            [
+                "KDA and Attention Residuals",
+                "Stable LatentMoE, QB, and SiTU-GLU",
+                "Per-head Muon and MoonEP",
+                "Equal-data, equal-compute ablations",
+            ],
+        ),
+    ]
+    column_lefts = [110, 645, 1180]
+    column_width = 510
+    column_top = 580
+    column_bottom = 1030
+    bus_y = 535
+    draw.line((900, 490, 900, bus_y), fill="#6888A5", width=6)
+    draw.line((365, bus_y, 1435, bus_y), fill="#6888A5", width=6)
+    for left, (heading, fill, items) in zip(column_lefts, decisions):
+        right = left + column_width
+        centre = (left + right) // 2
+        arrow(draw, (centre, bus_y), (centre, column_top - 8), "#6888A5")
+        draw.rounded_rectangle(
+            (left, column_top, right, column_bottom),
+            radius=22,
+            fill=fill,
+            outline="#2E74B5",
+            width=3,
+        )
+        draw.rounded_rectangle(
+            (left, column_top, right, column_top + 75),
+            radius=22,
+            fill="#1F4D78",
+        )
+        draw.rectangle((left, column_top + 50, right, column_top + 75), fill="#1F4D78")
+        draw.text(
+            (centre, column_top + 38),
+            heading,
+            font=font("regular", 22, True),
+            fill="#FFFFFF",
+            anchor="mm",
+        )
+        item_top = column_top + 92
+        item_height = 80
+        for item_index, item in enumerate(items):
+            y1 = item_top + item_index * item_height
+            draw.ellipse((left + 24, y1 + 25, left + 38, y1 + 39), fill="#2E74B5")
+            wrapped(
+                draw,
+                item,
+                (left + 52, y1, right - 22, y1 + 65),
+                font("regular", 20, item_index == 0),
+                "#17324D",
+                spacing=5,
+            )
+
+    draw.rounded_rectangle(
+        (110, 1080, 1690, 1188),
+        radius=20,
+        fill="#FBE9E7",
+        outline="#A33B30",
+        width=4,
+    )
+    wrapped(
+        draw,
+        "NOT A DIRECT RETROFIT — QLoRA cannot add KDA, AttnRes, or LatentMoE; the full "
+        "2.78T / 104.2B-active K3 is not the small-cluster student; source claims are not "
+        "Hyperion results.",
+        (145, 1090, 1655, 1178),
+        font("regular", 22, True),
+        "#7A2E28",
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     image.save(path, dpi=(180, 180))
 
@@ -147,10 +486,47 @@ def build_diagrams(asset_dir: Path) -> None:
         "Hyperion system architecture",
         "Authority moves downward through immutable records; evidence moves upward for review.",
         [
-            ("Clients", ["Operator CLI", "Hosted API + worker", "Terminal adapter"], "#E8EEF5"),
-            ("Coordination", ["Five-role workflow", "Budgets + approvals", "SQLite + artifact store"], "#DDECF7"),
-            ("Model evidence", ["Corpus + teacher lineage", "Training + evaluation", "Promotion + readiness"], "#E8F4EC"),
-            ("Safety", ["Signed verifier authority", "Container controller", "Narrow .NET worker"], "#FFF4D6"),
+            (
+                "Clients",
+                [
+                    ("Operator CLI", "IMPLEMENTED"),
+                    ("Hosted API + worker", "IMPLEMENTED"),
+                    ("Terminal adapter", "IMPLEMENTED"),
+                ],
+                "#E8EEF5",
+            ),
+            (
+                "Coordination",
+                [
+                    ("Five-role workflow", "IMPLEMENTED"),
+                    ("Budgets + approvals", "IMPLEMENTED"),
+                    ("SQLite + artifact store", "IMPLEMENTED"),
+                ],
+                "#DDECF7",
+            ),
+            (
+                "Model evidence",
+                [
+                    ("Corpus + teacher lineage\n(contracts only)", "IMPLEMENTED"),
+                    ("Training + evaluation\n(harness only)", "IMPLEMENTED"),
+                    ("Promotion + readiness\n(contracts only)", "IMPLEMENTED"),
+                ],
+                "#E8F4EC",
+            ),
+            (
+                "Safety",
+                [
+                    ("Signed verifier authority", "IMPLEMENTED"),
+                    ("Container controller", "IMPLEMENTED"),
+                    ("Narrow .NET worker", "IMPLEMENTED"),
+                ],
+                "#FFF4D6",
+            ),
+        ],
+        [
+            ("request + approval", "quote + inert artifact"),
+            ("frozen spec + inputs", "results + usage"),
+            ("bound verification request", "verifier evidence"),
         ],
     )
     state_diagram(asset_dir / "hyperion-run-state-machine.png")
@@ -159,10 +535,47 @@ def build_diagrams(asset_dir: Path) -> None:
         "Evidence lifecycle",
         "No gate inherits authority from an earlier gate without a new, bound record.",
         [
-            ("Data", ["Rights + provenance", "Independent review", "Signed corpus release"], "#E8EEF5"),
-            ("Training", ["Pinned base + runtime", "Adapter checkpoint", "Sealed artifact"], "#DDECF7"),
-            ("Evaluation", ["Sealed tasks", "Independent replay", "Promotion decision"], "#FFF4D6"),
-            ("Serving", ["Activation envelope", "Runtime attestation", "Readiness proof"], "#E8F4EC"),
+            (
+                "Data",
+                [
+                    ("Rights + provenance tooling", "IMPLEMENTED"),
+                    ("Production independent review", "EXTERNAL / BLOCKED"),
+                    ("Signed corpus release\n(contract only)", "IMPLEMENTED"),
+                ],
+                "#E8EEF5",
+            ),
+            (
+                "Training",
+                [
+                    ("Pinned base + runtime", "IMPLEMENTED"),
+                    ("Real adapter checkpoint", "EXTERNAL / BLOCKED"),
+                    ("Sealed artifact\n(contract only)", "IMPLEMENTED"),
+                ],
+                "#DDECF7",
+            ),
+            (
+                "Evaluation",
+                [
+                    ("Production sealed tasks", "EXTERNAL / BLOCKED"),
+                    ("Independent replay harness", "IMPLEMENTED"),
+                    ("Promotion decision\n(contract only)", "IMPLEMENTED"),
+                ],
+                "#FFF4D6",
+            ),
+            (
+                "Serving",
+                [
+                    ("Activation envelope", "IMPLEMENTED"),
+                    ("Runtime attestation", "TARGET"),
+                    ("Readiness proof\n(contract only)", "IMPLEMENTED"),
+                ],
+                "#E8F4EC",
+            ),
+        ],
+        [
+            ("approved release", "review findings"),
+            ("candidate artifact", "accept / reject evidence"),
+            ("promotion envelope", "readiness telemetry"),
         ],
     )
     layered_diagram(
@@ -170,10 +583,47 @@ def build_diagrams(asset_dir: Path) -> None:
         "Trust and signing chain",
         "Detached signers approve hashes and claims; they do not rebuild evidence supplied by the caller.",
         [
-            ("Producers", ["Corpus author", "Trainer", "Verifier controller"], "#E8EEF5"),
-            ("Review", ["Independent reviewer", "Replay auditor", "Promotion authority"], "#FFF4D6"),
-            ("Signing", ["KMS/HSM request", "Detached signature", "Canonical envelope"], "#DDECF7"),
-            ("Consumers", ["Coordinator", "Hosted platform", "Deployment gate"], "#E8F4EC"),
+            (
+                "Producers",
+                [
+                    ("Production corpus author", "EXTERNAL / BLOCKED"),
+                    ("Trainer harness", "IMPLEMENTED"),
+                    ("Verifier controller", "IMPLEMENTED"),
+                ],
+                "#E8EEF5",
+            ),
+            (
+                "Independent review",
+                [
+                    ("Corpus reviewer", "EXTERNAL / BLOCKED"),
+                    ("Replay authority", "EXTERNAL / BLOCKED"),
+                    ("Promotion authority", "EXTERNAL / BLOCKED"),
+                ],
+                "#FFF4D6",
+            ),
+            (
+                "Signing",
+                [
+                    ("KMS/HSM request path", "TARGET"),
+                    ("Production detached signature", "EXTERNAL / BLOCKED"),
+                    ("Canonical envelope", "IMPLEMENTED"),
+                ],
+                "#DDECF7",
+            ),
+            (
+                "Consumers",
+                [
+                    ("Coordinator", "IMPLEMENTED"),
+                    ("Hosted platform", "IMPLEMENTED"),
+                    ("Deployment gate", "IMPLEMENTED"),
+                ],
+                "#E8F4EC",
+            ),
+        ],
+        [
+            ("evidence bundle", "findings + decision"),
+            ("canonical preimage", "signature + key identity"),
+            ("signed envelope", "verification result"),
         ],
     )
     layered_diagram(
@@ -181,10 +631,47 @@ def build_diagrams(asset_dir: Path) -> None:
         "Small-cluster training topology",
         "Start with adapter training on a right-sized open-weight base; keep control and evidence off GPU workers.",
         [
-            ("Control", ["Scheduler + run registry", "Secrets/KMS broker", "Metrics + audit"], "#E8EEF5"),
-            ("Storage", ["Versioned corpus", "Immutable artifacts", "Model/cache mirror"], "#DDECF7"),
-            ("GPU pool", ["Trainer rank 0", "Trainer ranks 1..N", "Evaluation/serving"], "#E8F4EC"),
-            ("Isolation", ["Verifier microVM", "Restricted egress", "Backup + restore"], "#FFF4D6"),
+            (
+                "Control",
+                [
+                    ("Cluster scheduler + run registry", "TARGET"),
+                    ("External secrets/KMS broker", "EXTERNAL / BLOCKED"),
+                    ("Cluster metrics + audit", "TARGET"),
+                ],
+                "#E8EEF5",
+            ),
+            (
+                "Storage",
+                [
+                    ("Production versioned corpus", "EXTERNAL / BLOCKED"),
+                    ("Immutable artifact contracts", "IMPLEMENTED"),
+                    ("Model/cache mirror", "TARGET"),
+                ],
+                "#DDECF7",
+            ),
+            (
+                "GPU pool",
+                [
+                    ("Trainer rank 0", "EXTERNAL / BLOCKED"),
+                    ("Trainer ranks 1..N", "EXTERNAL / BLOCKED"),
+                    ("Evaluation / serving pool", "EXTERNAL / BLOCKED"),
+                ],
+                "#E8F4EC",
+            ),
+            (
+                "Isolation",
+                [
+                    ("Verifier microVM", "TARGET"),
+                    ("Restricted egress", "TARGET"),
+                    ("Backup + restore", "TARGET"),
+                ],
+                "#FFF4D6",
+            ),
+        ],
+        [
+            ("signed run spec", "status + audit events"),
+            ("read-only snapshots", "checkpoints + metrics"),
+            ("verification request", "verdict + recovery proof"),
         ],
     )
     layered_diagram(
@@ -192,13 +679,60 @@ def build_diagrams(asset_dir: Path) -> None:
         "Hyperion frontier model factory",
         "Models propose; governed evidence, independent verification, and human release grant authority.",
         [
-            ("Authority", ["Registry + policy", "Budgets + credits", "Promotion + rollback"], "#E8EEF5"),
-            ("Knowledge", ["Reviewed corpus", "Versioned private RAG", "Sealed evaluation"], "#DDECF7"),
-            ("Teachers", ["Hosted frontier", "Open large models", "Critics + judges"], "#FFF4D6"),
-            ("Student factory", ["Raw-base bake-off", "SFT / DPO / RLVR", "Specialists + router"], "#E8F4EC"),
-            ("Runtime", ["Coordinator + tools", "Verifier + replay", "Inference + GPU cluster"], "#E8EEF5"),
+            (
+                "Authority",
+                [
+                    ("Registry + policy", "IMPLEMENTED"),
+                    ("Budgets + credits", "IMPLEMENTED"),
+                    ("Promotion + rollback\n(contracts only)", "IMPLEMENTED"),
+                ],
+                "#E8EEF5",
+            ),
+            (
+                "Knowledge",
+                [
+                    ("Production reviewed corpus", "EXTERNAL / BLOCKED"),
+                    ("Versioned private RAG", "IMPLEMENTED"),
+                    ("Production sealed evaluation", "EXTERNAL / BLOCKED"),
+                ],
+                "#DDECF7",
+            ),
+            (
+                "Teachers",
+                [
+                    ("Hosted frontier teacher", "TARGET"),
+                    ("Open large models", "TARGET"),
+                    ("Critics + judges", "TARGET"),
+                ],
+                "#FFF4D6",
+            ),
+            (
+                "Student factory",
+                [
+                    ("Raw-base bake-off\n(synthetic evidence)", "IMPLEMENTED"),
+                    ("SFT / DPO / RLVR\n(harness only)", "IMPLEMENTED"),
+                    ("Effort specialists + router", "RESEARCH"),
+                ],
+                "#E8F4EC",
+            ),
+            (
+                "Runtime",
+                [
+                    ("Coordinator + tools", "IMPLEMENTED"),
+                    ("Verifier + replay", "IMPLEMENTED"),
+                    ("Inference + GPU cluster", "EXTERNAL / BLOCKED"),
+                ],
+                "#E8EEF5",
+            ),
+        ],
+        [
+            ("policy + rights gates", "evidence + exceptions"),
+            ("authorised examples", "teacher traces + critiques"),
+            ("training specification", "candidate + metrics"),
+            ("accepted artifact", "telemetry + rollback evidence"),
         ],
     )
+    kimi_adoption_diagram(asset_dir / "hyperion-kimi-k3-adoption-map.png")
 
 
 def set_cell_shading(cell, fill: str) -> None:
@@ -432,11 +966,83 @@ def configure_document(document: Document) -> None:
         footer_run.font.color.rgb = RGBColor.from_string(GREY)
 
 
+def configure_default_language(document: Document, language: str) -> None:
+    styles = document.styles.element
+    doc_defaults = styles.find(qn("w:docDefaults"))
+    if doc_defaults is None:
+        doc_defaults = OxmlElement("w:docDefaults")
+        styles.insert(0, doc_defaults)
+    run_properties_default = doc_defaults.find(qn("w:rPrDefault"))
+    if run_properties_default is None:
+        run_properties_default = OxmlElement("w:rPrDefault")
+        doc_defaults.insert(0, run_properties_default)
+    run_properties = run_properties_default.find(qn("w:rPr"))
+    if run_properties is None:
+        run_properties = OxmlElement("w:rPr")
+        run_properties_default.append(run_properties)
+    language_element = run_properties.find(qn("w:lang"))
+    if language_element is None:
+        language_element = OxmlElement("w:lang")
+        run_properties.append(language_element)
+    language_element.set(qn("w:val"), language)
+    language_element.set(qn("w:eastAsia"), language)
+    language_element.set(qn("w:bidi"), language)
+
+    normal_run_properties = document.styles["Normal"].element.get_or_add_rPr()
+    normal_language = normal_run_properties.find(qn("w:lang"))
+    if normal_language is None:
+        normal_language = OxmlElement("w:lang")
+        normal_run_properties.append(normal_language)
+    normal_language.set(qn("w:val"), language)
+    normal_language.set(qn("w:eastAsia"), language)
+    normal_language.set(qn("w:bidi"), language)
+
+
+def configure_extended_properties(document: Document) -> None:
+    text_chunks = [paragraph.text for paragraph in document.paragraphs]
+    for table in document.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                text_chunks.extend(paragraph.text for paragraph in cell.paragraphs)
+    plain_text = "\n".join(text_chunks)
+    word_count = len(re.findall(r"\b[\w]+(?:[-'][\w]+)*\b", plain_text))
+    properties = {
+        "Template": "Hyperion Engineering Handbook",
+        "Pages": str(HANDBOOK_EXPECTED_PAGES),
+        "Words": str(word_count),
+        "Characters": str(sum(not character.isspace() for character in plain_text)),
+        "Application": "Hyperion Handbook Builder",
+        "Paragraphs": str(len(text_chunks)),
+        "CharactersWithSpaces": str(len(plain_text)),
+        "AppVersion": HANDBOOK_VERSION,
+    }
+    app_part = next(
+        part
+        for part in document.part.package.parts
+        if str(part.partname) == "/docProps/app.xml"
+    )
+    root = etree.fromstring(app_part.blob)
+    namespace = (
+        "{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}"
+    )
+    for name, value in properties.items():
+        element = root.find(f"{namespace}{name}")
+        if element is None:
+            element = etree.SubElement(root, f"{namespace}{name}")
+        element.text = value
+    app_part._blob = etree.tostring(
+        root,
+        encoding="UTF-8",
+        xml_declaration=True,
+        standalone=True,
+    )
+
+
 def add_cover(document: Document) -> None:
     document.add_paragraph().paragraph_format.space_after = Pt(38)
     kicker = document.add_paragraph()
     kicker.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = kicker.add_run("PRIVATE ENGINEERING HANDBOOK  •  VERSION 1.1")
+    run = kicker.add_run(f"PRIVATE ENGINEERING HANDBOOK  •  VERSION {HANDBOOK_VERSION}")
     run.bold = True
     run.font.size = Pt(10)
     run.font.color.rgb = RGBColor.from_string(BLUE)
@@ -473,10 +1079,13 @@ def add_cover(document: Document) -> None:
     run.font.color.rgb = RGBColor(255, 255, 255)
     document.add_paragraph().paragraph_format.space_after = Pt(54)
     for label, value in (
-        ("DATE", "31 July 2026"),
+        ("DATE", HANDBOOK_DATE),
         ("REPOSITORY", "github.com/dhruuvsharma/Hyperion"),
         ("CLASSIFICATION", "Private engineering material"),
-        ("STATUS", "Infrastructure implemented; no trained Hyperion checkpoint or production deployment"),
+        (
+            "STATUS",
+            "Infrastructure implemented; no trained Hyperion checkpoint or production deployment",
+        ),
     ):
         paragraph = document.add_paragraph()
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -540,22 +1149,29 @@ def add_table(document: Document, rows: list[list[str]]) -> None:
     after.paragraph_format.space_after = Pt(2)
 
 
-def add_picture(document: Document, source_dir: Path, alt: str, relative_path: str, number: int) -> None:
+def add_picture(
+    document: Document, source_dir: Path, alt: str, relative_path: str, number: int
+) -> None:
     image_path = (source_dir / relative_path).resolve()
     if not image_path.exists():
-        add_callout(document, f"Diagram unavailable during build: {relative_path}", PALE_RED)
+        add_callout(
+            document, f"Diagram unavailable during build: {relative_path}", PALE_RED
+        )
         return
+    description = IMAGE_DESCRIPTIONS.get(relative_path, alt)
     paragraph = document.add_paragraph()
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
     paragraph.paragraph_format.keep_together = True
+    paragraph.paragraph_format.keep_with_next = True
     run = paragraph.add_run()
     run.add_picture(str(image_path), width=Inches(6.35))
     drawing = run._r.xpath(".//wp:docPr")
     if drawing:
-        drawing[0].set("descr", alt)
+        drawing[0].set("descr", description)
         drawing[0].set("title", alt)
     caption = document.add_paragraph(style="Figure Caption")
     caption.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    caption.paragraph_format.keep_together = True
     caption.add_run(f"Figure {number}. {alt}")
 
 
@@ -641,9 +1257,13 @@ def apply_numbering(paragraph, number_id: int, level: int) -> None:
     p_pr.append(num_pr)
 
 
-def add_contents(document: Document, headings: list[str], architecture_path: Path) -> None:
-    heading = document.add_paragraph("Contents", style="Heading 1")
+def add_contents(document: Document, headings: list[str], source_dir: Path) -> None:
+    heading = document.add_paragraph("Section index", style="Heading 1")
     heading.paragraph_format.space_before = Pt(0)
+    document.add_paragraph(
+        "This compact index lists the handbook's numbered sections; the PDF outline and Word headings provide "
+        "navigation."
+    )
     for value in headings:
         paragraph = document.add_paragraph(style="List Number")
         # Markdown section headings already carry explicit numbers; avoid a second visible number.
@@ -658,25 +1278,29 @@ def add_contents(document: Document, headings: list[str], architecture_path: Pat
         "production corpus, conforming training run, trained checkpoint, accepted benchmark, or production "
         "deployment. Every quality and readiness claim must remain attached to its evidence.",
     )
-    paragraph = document.add_paragraph()
-    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = paragraph.add_run()
-    run.add_picture(str(architecture_path), width=Inches(6.15))
-    drawing = run._r.xpath(".//wp:docPr")
-    if drawing:
-        drawing[0].set("descr", "Hyperion system architecture overview")
-        drawing[0].set("title", "Hyperion system architecture overview")
+    add_picture(
+        document,
+        source_dir,
+        "Hyperion system architecture",
+        "assets/hyperion-system-architecture.png",
+        1,
+    )
     document.add_page_break()
 
 
 def render_markdown(document: Document, source: Path) -> None:
     lines = source.read_text(encoding="utf-8").splitlines()
-    headings = [line[3:].strip() for line in lines if line.startswith("## ") and not line.startswith("## Engineering")]
-    asset_dir = source.parent / "assets"
-    add_contents(document, headings, asset_dir / "hyperion-system-architecture.png")
-    start = next(index for index, line in enumerate(lines) if re.match(r"##\s+1\.", line))
+    headings = [
+        line[3:].strip()
+        for line in lines
+        if line.startswith("## ") and not line.startswith("## Engineering")
+    ]
+    add_contents(document, headings, source.parent)
+    start = next(
+        index for index, line in enumerate(lines) if re.match(r"##\s+1\.", line)
+    )
     index = start
-    figure_number = 1
+    figure_number = 2
     active_number_id: int | None = None
     while index < len(lines):
         line = lines[index]
@@ -696,7 +1320,13 @@ def render_markdown(document: Document, source: Path) -> None:
             continue
         if image_match:
             active_number_id = None
-            add_picture(document, source.parent, image_match.group(1), image_match.group(2), figure_number)
+            add_picture(
+                document,
+                source.parent,
+                image_match.group(1),
+                image_match.group(2),
+                figure_number,
+            )
             figure_number += 1
             index += 1
             continue
@@ -718,7 +1348,11 @@ def render_markdown(document: Document, source: Path) -> None:
                 index += 1
             add_callout(document, " ".join(quote))
             continue
-        if stripped.startswith("|") and index + 1 < len(lines) and re.match(r"^\s*\|?\s*:?-{3,}", lines[index + 1]):
+        if (
+            stripped.startswith("|")
+            and index + 1 < len(lines)
+            and re.match(r"^\s*\|?\s*:?-{3,}", lines[index + 1])
+        ):
             active_number_id = None
             rows = [markdown_cells(line)]
             index += 2
@@ -735,7 +1369,11 @@ def render_markdown(document: Document, source: Path) -> None:
             level = min(len(match.group(1).replace("\t", "    ")) // 2, 2)
             value = match.group(2) if list_match else match.group(3)
             index += 1
-            while index < len(lines) and lines[index].startswith("  ") and not re.match(r"^\s*[-*]\s+", lines[index]):
+            while (
+                index < len(lines)
+                and lines[index].startswith("  ")
+                and not re.match(r"^\s*[-*]\s+", lines[index])
+            ):
                 value += " " + lines[index].strip()
                 index += 1
             if list_match:
@@ -744,7 +1382,9 @@ def render_markdown(document: Document, source: Path) -> None:
                 style = style_root if level == 0 else f"{style_root} {level + 1}"
             else:
                 if active_number_id is None:
-                    active_number_id = create_numbering_instance(document, int(number_match.group(2)))
+                    active_number_id = create_numbering_instance(
+                        document, int(number_match.group(2))
+                    )
                 style = "List Number" if level == 0 else f"List Number {level + 1}"
             paragraph = document.add_paragraph(style=style)
             if number_match:
@@ -776,25 +1416,50 @@ def render_markdown(document: Document, source: Path) -> None:
         add_inline(paragraph, " ".join(paragraph_lines))
 
 
+def validate_source_metadata(source: Path) -> None:
+    content = source.read_text(encoding="utf-8")
+    required = [
+        f"**Version:** {HANDBOOK_VERSION}",
+        f"**Date:** {HANDBOOK_DATE}",
+    ]
+    missing = [marker for marker in required if marker not in content]
+    if missing:
+        raise ValueError(
+            f"Handbook source metadata does not match builder constants: {missing}"
+        )
+
+
 def build(source: Path, output: Path) -> None:
+    validate_source_metadata(source)
     assets = source.parent / "assets"
     build_diagrams(assets)
     document = Document()
     configure_styles(document)
     configure_document(document)
+    configure_default_language(document, "en-GB")
     document.core_properties.title = "Hyperion LLM Coordinator Engineering Handbook"
     document.core_properties.subject = "Frontier model architecture, model evidence, verifier safety, and ML operations"
     document.core_properties.author = "Hyperion Engineering"
+    document.core_properties.last_modified_by = "Hyperion Engineering"
     document.core_properties.keywords = "Hyperion, LLM coordinator, distillation, RLVR, QLoRA, verifier, model governance"
     document.core_properties.comments = "Private engineering material"
+    document.core_properties.category = "Engineering handbook"
+    document.core_properties.content_status = "Reviewed"
+    document.core_properties.created = HANDBOOK_RELEASED_UTC
+    document.core_properties.modified = HANDBOOK_RELEASED_UTC
+    document.core_properties.revision = 1
+    document.core_properties.version = HANDBOOK_VERSION
     settings = document.settings.element
     language = settings.find(qn("w:themeFontLang"))
     if language is None:
         language = OxmlElement("w:themeFontLang")
         settings.append(language)
     language.set(qn("w:val"), "en-GB")
+    language.set(qn("w:eastAsia"), "en-GB")
+    language.set(qn("w:bidi"), "en-GB")
     add_cover(document)
     render_markdown(document, source)
+    configure_extended_properties(document)
     output.parent.mkdir(parents=True, exist_ok=True)
     document.save(output)
 
