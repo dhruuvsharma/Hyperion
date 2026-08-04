@@ -1,5 +1,5 @@
 # Kimi K3 handbook and architecture refresh
-Status: active
+Status: complete
 
 ## Goal
 Verify the latest official Kimi K3 paper and source materials as of 5 August 2026, apply only
@@ -146,8 +146,10 @@ well-labelled ML-engineering handbook as synchronized Markdown, DOCX, and PDF ar
   untracked secret/key/model-weight screening, clean pinned submodule status, and private GitHub
   repository visibility passed.
 - Hosted private-repository CI run `30943868102`: Python passed; Windows attempt 1 exposed the
-  redundant signal deadline and attempt 2 exposed the worker-claim race. A new run for the bounded
-  test-harness closure is pending publication.
+  redundant signal deadline and attempt 2 exposed the worker-claim race. Closure run `30947321302`
+  on commit `a9791ef8a0783034c1f914526e1d8e65bf6067af` then passed on its first attempt: Python tests,
+  lint, formatting, compilation, and CLI discovery completed in 2m06s; Windows restore, build, all
+  541 tests, and formatting completed in 5m16s.
 
 ## Risks / deferred
 - The pinned shared Core context requires an upstream refresh for six index shards (`Charts`, `Core`,
@@ -159,3 +161,5 @@ well-labelled ML-engineering handbook as synchronized Markdown, DOCX, and PDF ar
   require a fresh source/version check.
 - Production training, independent review, KMS/HSM custody, accepted evaluation, and deployment are
   outside this documentation slice and remain evidence-gated.
+- GitHub currently warns that the pinned checkout/setup actions target deprecated Node.js 20 and are
+  being forced onto Node.js 24. The run remains green; action-version maintenance is deferred.
