@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/expert-model-independent-review-decision.v1.schema.json",
+  "title": "DaxAlgo non-authorizing independent expert-model review decision v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "decisionId", "packageId", "packageSha256", "reviewedDatasetSha256", "authority", "reviewer", "reviewBasis", "reviewedAtUtc", "evidenceFiles", "rows", "sources"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.expert-model-independent-review-decision/v1"},
+    "decisionId": {"type": "string", "pattern": "^review-decision-[0-9a-f]{64}$"},
+    "packageId": {"type": "string", "pattern": "^review-package-[0-9a-f]{64}$"},
+    "packageSha256": {"$ref": "#/$defs/sha256"},
+    "reviewedDatasetSha256": {"$ref": "#/$defs/sha256"},
+    "authority": {"$ref": "#/$defs/noDownstreamAuthority"},
+    "reviewer": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "\\S"},
+    "reviewBasis": {"type": "string", "minLength": 1, "maxLength": 4000, "pattern": "\\S"},
+    "reviewedAtUtc": {"$ref": "#/$defs/reviewedAt"},
+    "evidenceFiles": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/evidenceFile"}
+    },
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100000,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/rowDecision"}
+    },
+    "sources": {
+      "type": "array",
+      "maxItems": 6400000,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/sourceDecision"}
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "base64": {"type": "string", "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"},
+    "reviewedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\+00:00$"
+    },
+    "noDownstreamAuthority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["receiptAuthority", "trainingEligibilityAuthority", "providerUploadAuthority", "sftExportAuthority", "signingKeyAuthority", "modelReleaseAuthority", "evaluationAuthority", "promotionAuthority", "deploymentAuthority", "executionAuthority"],
+      "properties": {
+        "receiptAuthority": {"const": false},
+        "trainingEligibilityAuthority": {"const": false},
+        "providerUploadAuthority": {"const": false},
+        "sftExportAuthority": {"const": false},
+        "signingKeyAuthority": {"const": false},
+        "modelReleaseAuthority": {"const": false},
+        "evaluationAuthority": {"const": false},
+        "promotionAuthority": {"const": false},
+        "deploymentAuthority": {"const": false},
+        "executionAuthority": {"const": false}
+      }
+    },
+    "evidenceFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "fileName", "sizeBytes", "sha256", "contentBase64"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "fileName": {"type": "string", "minLength": 1, "maxLength": 255, "pattern": "^[A-Za-z0-9._-]+$"},
+        "sizeBytes": {"type": "integer", "minimum": 1, "maximum": 10000000},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "contentBase64": {"allOf": [{"$ref": "#/$defs/base64"}, {"maxLength": 13333336}]}
+      }
+    },
+    "decisionRights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mayStore", "mayEvaluate", "mayTrain", "mayUploadToProvider", "mayRedistribute"],
+      "properties": {
+        "mayStore": {"const": true},
+        "mayEvaluate": {"const": true},
+        "mayTrain": {"type": "boolean"},
+        "mayUploadToProvider": {"type": "boolean"},
+        "mayRedistribute": {"type": "boolean"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"mayUploadToProvider": {"const": true}}, "required": ["mayUploadToProvider"]},
+          "then": {"properties": {"mayTrain": {"const": true}}}
+        }
+      ]
+    },
+    "rowDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exampleId", "rights", "useForTraining", "evidenceIds"],
+      "properties": {
+        "exampleId": {"$ref": "#/$defs/id"},
+        "rights": {"$ref": "#/$defs/decisionRights"},
+        "useForTraining": {"type": "boolean"},
+        "evidenceIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        }
+      },
+      "allOf": [
+        {"if": {"properties": {"useForTraining": {"const": true}}, "required": ["useForTraining"]}, "then": {"properties": {"rights": {"properties": {"mayTrain": {"const": true}}}}}}
+      ]
+    },
+    "sourceDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exampleId", "sourceId", "rights", "evidenceIds"],
+      "properties": {
+        "exampleId": {"$ref": "#/$defs/id"},
+        "sourceId": {"$ref": "#/$defs/id"},
+        "rights": {"$ref": "#/$defs/decisionRights"},
+        "evidenceIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        }
+      }
+    }
+  }
+}

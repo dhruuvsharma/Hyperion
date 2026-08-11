@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/serving-profile.v1.schema.json",
+  "title": "Hyperion bound serving profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "profileId", "candidateCatalogSha256", "candidateId", "baseModel", "trainingArtifact", "chatTemplateSha256", "runtime", "protocol"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.serving-profile/v1"},
+    "profileId": {"$ref": "#/$defs/id"},
+    "candidateCatalogSha256": {"$ref": "#/$defs/sha256"},
+    "candidateId": {"$ref": "#/$defs/id"},
+    "baseModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modelId", "revision"],
+      "properties": {
+        "modelId": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$"},
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+      }
+    },
+    "trainingArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "trainingRunManifestSha256", "artifactSha256", "artifactTreeSha256"],
+      "properties": {
+        "mode": {"enum": ["unpromoted-candidate", "unpromoted-research"]},
+        "trainingRunManifestSha256": {"$ref": "#/$defs/sha256"},
+        "artifactSha256": {"$ref": "#/$defs/sha256"},
+        "artifactTreeSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "chatTemplateSha256": {"$ref": "#/$defs/sha256"},
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["engine", "engineVersion", "containerImageDigest", "quantization", "computeDtype", "maxModelLength", "tensorParallelSize", "gpuProfile"],
+      "properties": {
+        "engine": {"$ref": "#/$defs/id"},
+        "engineVersion": {"type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+:-]*$"},
+        "containerImageDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "quantization": {"enum": ["none", "bitsandbytes-nf4", "awq", "gptq", "mxfp4"]},
+        "computeDtype": {"enum": ["float16", "bfloat16", "float32"]},
+        "maxModelLength": {"type": "integer", "minimum": 128, "maximum": 262144},
+        "tensorParallelSize": {"type": "integer", "minimum": 1, "maximum": 64},
+        "gpuProfile": {"$ref": "#/$defs/id"}
+      }
+    },
+    "protocol": {"const": "openai-compatible"}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

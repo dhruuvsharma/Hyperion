@@ -1,0 +1,317 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/training-corpus-quality-report.v1.schema.json",
+  "title": "Hyperion training corpus quality report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "dataset",
+    "taskCounts",
+    "domainCounts",
+    "domainTaskCounts",
+    "domainContaminationGroups",
+    "contaminationGroupCounts",
+    "originCounts",
+    "producerCounts",
+    "distinctCounts",
+    "concentration"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.training-corpus-quality-report/v1"},
+    "dataset": {"$ref": "#/$defs/dataset"},
+    "taskCounts": {
+      "type": "array",
+      "minItems": 11,
+      "maxItems": 11,
+      "items": {"$ref": "#/$defs/taskCount"}
+    },
+    "domainCounts": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {"$ref": "#/$defs/domainCount"}
+    },
+    "domainTaskCounts": {
+      "type": "array",
+      "minItems": 88,
+      "maxItems": 88,
+      "items": {"$ref": "#/$defs/domainTaskCount"}
+    },
+    "domainContaminationGroups": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {"$ref": "#/$defs/domainContaminationGroups"}
+    },
+    "contaminationGroupCounts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100000,
+      "items": {"$ref": "#/$defs/groupCount"}
+    },
+    "originCounts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "items": {"$ref": "#/$defs/originCount"}
+    },
+    "producerCounts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100000,
+      "items": {"$ref": "#/$defs/producerCount"}
+    },
+    "distinctCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contaminationGroups", "origins", "producers"],
+      "properties": {
+        "contaminationGroups": {"$ref": "#/$defs/positiveCount"},
+        "origins": {"type": "integer", "minimum": 1, "maximum": 4},
+        "producers": {"$ref": "#/$defs/positiveCount"}
+      }
+    },
+    "concentration": {"$ref": "#/$defs/concentration"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "count": {"type": "integer", "minimum": 0, "maximum": 100000},
+    "positiveCount": {"type": "integer", "minimum": 1, "maximum": 100000},
+    "rational": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numerator", "denominator"],
+      "properties": {
+        "numerator": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+        "denominator": {"type": "integer", "minimum": 1, "maximum": 1000000000}
+      }
+    },
+    "taskKind": {
+      "enum": [
+        "ArchitectureDesign",
+        "CodeGeneration",
+        "CodeRepair",
+        "CodeReview",
+        "GeneralQuestionAnswering",
+        "MarketAnalysis",
+        "PortfolioAnalysis",
+        "QuantitativeReasoning",
+        "RiskAnalysis",
+        "StatisticalReasoning",
+        "WpfUiDesign"
+      ]
+    },
+    "domain": {
+      "enum": [
+        "CSharp",
+        "DaxAlgoArchitecture",
+        "FinanceMarkets",
+        "PortfolioManagement",
+        "ProbabilityStatistics",
+        "QuantitativeMath",
+        "RiskManagement",
+        "WpfUiDesign"
+      ]
+    },
+    "origin": {
+      "enum": ["DerivedRepair", "HostedTeacher", "HumanAuthored", "OpenWeightTeacher"]
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "byteCount", "recordCount", "sourceSchemaVersions"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "byteCount": {"type": "integer", "minimum": 1, "maximum": 100000000},
+        "recordCount": {"$ref": "#/$defs/positiveCount"},
+        "sourceSchemaVersions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 200}
+        }
+      }
+    },
+    "taskCount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskKind", "recordCount"],
+      "properties": {
+        "taskKind": {"$ref": "#/$defs/taskKind"},
+        "recordCount": {"$ref": "#/$defs/count"}
+      }
+    },
+    "domainCount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "labelCount", "weightedCount"],
+      "properties": {
+        "domain": {"$ref": "#/$defs/domain"},
+        "labelCount": {"$ref": "#/$defs/count"},
+        "weightedCount": {"$ref": "#/$defs/rational"}
+      }
+    },
+    "domainTaskCount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "taskKind", "labelCount", "weightedCount"],
+      "properties": {
+        "domain": {"$ref": "#/$defs/domain"},
+        "taskKind": {"$ref": "#/$defs/taskKind"},
+        "labelCount": {"$ref": "#/$defs/count"},
+        "weightedCount": {"$ref": "#/$defs/rational"}
+      }
+    },
+    "domainContaminationGroups": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "distinctCount", "maximumGroup"],
+      "properties": {
+        "domain": {"$ref": "#/$defs/domain"},
+        "distinctCount": {"$ref": "#/$defs/count"},
+        "maximumGroup": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["contaminationGroup", "labelCount", "weightedCount", "weightedShare"],
+              "properties": {
+                "contaminationGroup": {"type": "string", "minLength": 1, "maxLength": 200},
+                "labelCount": {"$ref": "#/$defs/positiveCount"},
+                "weightedCount": {"$ref": "#/$defs/rational"},
+                "weightedShare": {"$ref": "#/$defs/rational"}
+              }
+            }
+          ]
+        }
+      }
+    },
+    "groupCount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contaminationGroup", "recordCount"],
+      "properties": {
+        "contaminationGroup": {"type": "string", "minLength": 1, "maxLength": 200},
+        "recordCount": {"$ref": "#/$defs/positiveCount"}
+      }
+    },
+    "originCount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin", "recordCount"],
+      "properties": {
+        "origin": {"$ref": "#/$defs/origin"},
+        "recordCount": {"$ref": "#/$defs/positiveCount"}
+      }
+    },
+    "producerCount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["producer", "recordCount"],
+      "properties": {
+        "producer": {"type": "string", "minLength": 1, "maxLength": 500},
+        "recordCount": {"$ref": "#/$defs/positiveCount"}
+      }
+    },
+    "integerConcentration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recordCount", "share"],
+      "properties": {
+        "recordCount": {"$ref": "#/$defs/positiveCount"},
+        "share": {"$ref": "#/$defs/rational"}
+      }
+    },
+    "weightedConcentration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["weightedCount", "share"],
+      "properties": {
+        "weightedCount": {"$ref": "#/$defs/rational"},
+        "share": {"$ref": "#/$defs/rational"}
+      }
+    },
+    "concentration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maximumDomainsPerRecord",
+        "multiDomainRecordCount",
+        "task",
+        "domainWeighted",
+        "domainTaskWeighted",
+        "contaminationGroup",
+        "origin",
+        "producer"
+      ],
+      "properties": {
+        "maximumDomainsPerRecord": {"type": "integer", "minimum": 1, "maximum": 8},
+        "multiDomainRecordCount": {"$ref": "#/$defs/count"},
+        "task": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["taskKind", "recordCount", "share"],
+          "properties": {
+            "taskKind": {"$ref": "#/$defs/taskKind"},
+            "recordCount": {"$ref": "#/$defs/positiveCount"},
+            "share": {"$ref": "#/$defs/rational"}
+          }
+        },
+        "domainWeighted": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["domain", "weightedCount", "share"],
+          "properties": {
+            "domain": {"$ref": "#/$defs/domain"},
+            "weightedCount": {"$ref": "#/$defs/rational"},
+            "share": {"$ref": "#/$defs/rational"}
+          }
+        },
+        "domainTaskWeighted": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["domain", "taskKind", "weightedCount", "share"],
+          "properties": {
+            "domain": {"$ref": "#/$defs/domain"},
+            "taskKind": {"$ref": "#/$defs/taskKind"},
+            "weightedCount": {"$ref": "#/$defs/rational"},
+            "share": {"$ref": "#/$defs/rational"}
+          }
+        },
+        "contaminationGroup": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["contaminationGroup", "recordCount", "share"],
+          "properties": {
+            "contaminationGroup": {"type": "string", "minLength": 1, "maxLength": 200},
+            "recordCount": {"$ref": "#/$defs/positiveCount"},
+            "share": {"$ref": "#/$defs/rational"}
+          }
+        },
+        "origin": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["origin", "recordCount", "share"],
+          "properties": {
+            "origin": {"$ref": "#/$defs/origin"},
+            "recordCount": {"$ref": "#/$defs/positiveCount"},
+            "share": {"$ref": "#/$defs/rational"}
+          }
+        },
+        "producer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["producer", "recordCount", "share"],
+          "properties": {
+            "producer": {"type": "string", "minLength": 1, "maxLength": 500},
+            "recordCount": {"$ref": "#/$defs/positiveCount"},
+            "share": {"$ref": "#/$defs/rational"}
+          }
+        }
+      }
+    }
+  }
+}

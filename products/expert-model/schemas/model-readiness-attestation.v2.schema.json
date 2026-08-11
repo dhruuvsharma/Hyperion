@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/model-readiness-attestation.v2.schema.json",
+  "title": "Hyperion promotion-bound model-readiness attestation v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "nonce", "keyId", "proof"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.model-readiness/v2"},
+    "nonce": {"type": "string", "pattern": "^[A-Za-z0-9_-]{43}$"},
+    "keyId": {"$ref": "#/$defs/id"},
+    "proof": {"type": "string", "pattern": "^[A-Za-z0-9_-]{43}$"}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"}
+  }
+}

@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/evaluation-authoring-handoff.v1.schema.json",
+  "title": "DaxAlgo unsigned non-authorizing evaluation-authoring handoff v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "handoffId",
+    "status",
+    "purpose",
+    "statement",
+    "authority",
+    "declarations",
+    "sourceDataset",
+    "authoringManifest",
+    "calibrationTasks",
+    "sealedTasks",
+    "taskBindings",
+    "assets"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "daxalgo.hyperion.evaluation-authoring-handoff/v1"
+    },
+    "handoffId": {
+      "type": "string",
+      "pattern": "^daxalgo-evaluation-authoring-handoff-sha256-[0-9a-f]{64}$"
+    },
+    "status": {
+      "const": "unsigned-non-authorizing"
+    },
+    "purpose": {
+      "const": "evaluation-authoring-review-handoff"
+    },
+    "statement": {
+      "const": "This unsigned handoff binds reviewed corpus declarations, derived evaluation tasks, and exact review assets only. It does not attest independent authorship or sealed custody and grants no review, signing, evaluation, release, training, promotion, deployment, hosted serving, installation, verifier execution, or strategy execution authority."
+    },
+    "authority": {
+      "$ref": "#/$defs/authority"
+    },
+    "declarations": {
+      "$ref": "#/$defs/declarations"
+    },
+    "sourceDataset": {
+      "$ref": "#/$defs/sourceBinding"
+    },
+    "authoringManifest": {
+      "$ref": "#/$defs/fileBinding"
+    },
+    "calibrationTasks": {
+      "$ref": "#/$defs/taskBinding"
+    },
+    "sealedTasks": {
+      "$ref": "#/$defs/taskBinding"
+    },
+    "taskBindings": {
+      "$ref": "#/$defs/recordBinding"
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 30000,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/assetBinding"
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*)*$"
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "signingKeyAuthority",
+        "corpusReviewAuthority",
+        "evaluationAuthoringApprovalAuthority",
+        "evaluationExecutionAuthority",
+        "trainingEligibilityAuthority",
+        "providerUploadAuthority",
+        "releaseAuthority",
+        "baseSelectionAuthority",
+        "promotionAuthority",
+        "deploymentAuthority",
+        "hostedServingAuthority",
+        "installationAuthority",
+        "verifierExecutionAuthority",
+        "strategyExecutionAuthority"
+      ],
+      "properties": {
+        "signingKeyAuthority": {"const": false},
+        "corpusReviewAuthority": {"const": false},
+        "evaluationAuthoringApprovalAuthority": {"const": false},
+        "evaluationExecutionAuthority": {"const": false},
+        "trainingEligibilityAuthority": {"const": false},
+        "providerUploadAuthority": {"const": false},
+        "releaseAuthority": {"const": false},
+        "baseSelectionAuthority": {"const": false},
+        "promotionAuthority": {"const": false},
+        "deploymentAuthority": {"const": false},
+        "hostedServingAuthority": {"const": false},
+        "installationAuthority": {"const": false},
+        "verifierExecutionAuthority": {"const": false},
+        "strategyExecutionAuthority": {"const": false}
+      }
+    },
+    "declarations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "finalAssistantReferenceMessageOmitted",
+        "expectedAnswerFieldsEmittedInTaskRecords",
+        "independentAuthorshipAttested",
+        "sealedCustodyAttested",
+        "signedAuthoringApprovalRequired"
+      ],
+      "properties": {
+        "finalAssistantReferenceMessageOmitted": {"const": true},
+        "expectedAnswerFieldsEmittedInTaskRecords": {"const": false},
+        "independentAuthorshipAttested": {"const": false},
+        "sealedCustodyAttested": {"const": false},
+        "signedAuthoringApprovalRequired": {"const": true}
+      }
+    },
+    "sourceBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "sizeBytes", "recordCount"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1, "maximum": 100000000},
+        "recordCount": {"type": "integer", "minimum": 1, "maximum": 100000}
+      }
+    },
+    "fileBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "recordBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes", "recordCount"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1},
+        "recordCount": {"type": "integer", "minimum": 1, "maximum": 100000}
+      }
+    },
+    "taskBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "sizeBytes",
+        "recordCount",
+        "taskSetSha256"
+      ],
+      "properties": {
+        "path": {"$ref": "#/$defs/relativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1},
+        "recordCount": {"type": "integer", "minimum": 1, "maximum": 100000},
+        "taskSetSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "assetBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path", "sha256", "sizeBytes"],
+      "properties": {
+        "kind": {"enum": ["context-pack", "rubric", "verifier"]},
+        "path": {
+          "type": "string",
+          "pattern": "^evaluation/(?:context-packs|rubrics|verifiers)/[0-9a-f]{64}\\.bin$"
+        },
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1, "maximum": 16000000}
+      }
+    }
+  }
+}

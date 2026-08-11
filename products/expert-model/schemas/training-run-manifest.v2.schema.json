@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/training-run-manifest.v2.schema.json",
+  "title": "Hyperion selected QLoRA-SFT training-run manifest v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "runId", "createdAtUtc", "baseModel", "candidateCatalog", "dataRelease", "dataset", "method", "seed", "chatTemplate", "hyperparameters", "outputPath", "domains", "trainingRuntime", "baseModelSelection", "baseModelSnapshot"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.training-run/v2"},
+    "runId": {"type": "string", "pattern": "^vqrun-[0-9a-f]{20}$"},
+    "createdAtUtc": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "baseModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidateId", "modelId", "revision", "license", "officialSourceUrl"],
+      "properties": {
+        "candidateId": {"type": "string", "minLength": 1},
+        "modelId": {"type": "string", "minLength": 1},
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "license": {"type": "string", "minLength": 1},
+        "officialSourceUrl": {"type": "string", "format": "uri", "pattern": "^https://"}
+      }
+    },
+    "candidateCatalog": {"$ref": "#/$defs/catalogBinding"},
+    "dataRelease": {"$ref": "#/$defs/release"},
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "format", "recordCount", "sourceSchemaVersions"],
+      "properties": {
+        "path": {"const": "inputs/dataset.sft.jsonl"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "format": {"const": "expert-model-sft-jsonl"},
+        "recordCount": {"type": "integer", "minimum": 1},
+        "sourceSchemaVersions": {"type": "array", "const": ["expert-model-dataset/v1"]}
+      }
+    },
+    "method": {"const": "QLoRA-SFT"},
+    "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+    "chatTemplate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "template", "sha256"],
+      "properties": {"name": {"type": "string", "minLength": 1}, "template": {"type": "string", "minLength": 64}, "sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "hyperparameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "numTrainEpochs",
+        "learningRate",
+        "perDeviceTrainBatchSize",
+        "gradientAccumulationSteps",
+        "maxSequenceLength",
+        "warmupRatio",
+        "weightDecay",
+        "loraR",
+        "loraAlpha",
+        "loraDropout",
+        "loraTargetModules",
+        "quantizationBits",
+        "gradientCheckpointing",
+        "optimizer",
+        "lrScheduler"
+      ],
+      "properties": {
+        "numTrainEpochs": {"type": "number", "exclusiveMinimum": 0, "maximum": 50},
+        "learningRate": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "perDeviceTrainBatchSize": {"type": "integer", "minimum": 1, "maximum": 256},
+        "gradientAccumulationSteps": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "maxSequenceLength": {"type": "integer", "minimum": 128, "maximum": 262144},
+        "warmupRatio": {"type": "number", "minimum": 0, "exclusiveMaximum": 1},
+        "weightDecay": {"type": "number", "minimum": 0, "maximum": 1},
+        "loraR": {"type": "integer", "minimum": 1, "maximum": 1024},
+        "loraAlpha": {"type": "integer", "minimum": 1, "maximum": 8192},
+        "loraDropout": {"type": "number", "minimum": 0, "exclusiveMaximum": 1},
+        "loraTargetModules": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"}
+        },
+        "quantizationBits": {"const": 4},
+        "gradientCheckpointing": {"type": "boolean"},
+        "optimizer": {"const": "paged_adamw_8bit"},
+        "lrScheduler": {"const": "cosine"}
+      }
+    },
+    "outputPath": {"const": "outputs/adapter"},
+    "domains": {
+      "type": "array",
+      "const": [
+        "CSharp",
+        "DaxAlgoArchitecture",
+        "QuantitativeMath",
+        "ProbabilityStatistics",
+        "RiskManagement",
+        "PortfolioManagement",
+        "FinanceMarkets",
+        "WpfUiDesign"
+      ]
+    },
+    "trainingRuntime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "pylock"],
+      "properties": {
+        "profile": {"$ref": "#/$defs/runtimeProfileBinding"},
+        "pylock": {"$ref": "#/$defs/runtimeLockBinding"}
+      }
+    },
+    "baseModelSelection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "envelopeSha256", "payloadSha256", "selectionId", "expiresAtUtc"],
+      "properties": {
+        "path": {"const": "inputs/base-model-selection-envelope.json"},
+        "envelopeSha256": {"$ref": "#/$defs/sha256"},
+        "payloadSha256": {"$ref": "#/$defs/sha256"},
+        "selectionId": {"type": "string", "pattern": "^vqbaseselect-[0-9a-f]{64}$"},
+        "expiresAtUtc": {"type": "string", "format": "date-time", "pattern": "Z$"}
+      }
+    },
+    "baseModelSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "manifest", "sourceLock", "snapshotSha256", "fileTreeSha256", "chatTemplateSha256"],
+      "properties": {
+        "profile": {"$ref": "#/$defs/baseProfileBinding"},
+        "manifest": {"$ref": "#/$defs/snapshotManifestBinding"},
+        "sourceLock": {"$ref": "#/$defs/sourceLockBinding"},
+        "snapshotSha256": {"$ref": "#/$defs/sha256"},
+        "fileTreeSha256": {"$ref": "#/$defs/sha256"},
+        "chatTemplateSha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {"path": {"type": "string"}, "sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "catalogBinding": {"$ref": "#/$defs/binding", "properties": {"path": {"const": "inputs/candidate-catalog.json"}}},
+    "runtimeProfileBinding": {"$ref": "#/$defs/binding", "properties": {"path": {"const": "inputs/training-runtime-profile.json"}}},
+    "runtimeLockBinding": {"$ref": "#/$defs/binding", "properties": {"path": {"const": "inputs/pylock.train.toml"}}},
+    "baseProfileBinding": {"$ref": "#/$defs/binding", "properties": {"path": {"const": "inputs/base-evaluation-profile.json"}}},
+    "snapshotManifestBinding": {"$ref": "#/$defs/binding", "properties": {"path": {"const": "inputs/base-model-snapshot.json"}}},
+    "sourceLockBinding": {"$ref": "#/$defs/binding", "properties": {"path": {"const": "inputs/base-model-source-lock.json"}}},
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["releaseId", "releaseSha256", "manifestSha256"],
+      "properties": {"releaseId": {"type": "string", "pattern": "^vqrel-[0-9a-f]{64}$"}, "releaseSha256": {"$ref": "#/$defs/sha256"}, "manifestSha256": {"$ref": "#/$defs/sha256"}}
+    }
+  }
+}

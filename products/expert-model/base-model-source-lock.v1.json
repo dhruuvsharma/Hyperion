@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "daxalgo.hyperion.base-model-source-lock/v1",
+  "candidateCatalogSha256": "099a2b538283fa3e7be2a349614f54cd4aeaad895cf3b4b4fb08df5b656e9eb3",
+  "candidates": [
+    {
+      "candidateId": "qwen2.5-coder-7b-instruct",
+      "modelId": "Qwen/Qwen2.5-Coder-7B-Instruct",
+      "revision": "c03e6d358207e414f1eca0bb1891e29f1db0e242",
+      "files": [
+        {"path": "LICENSE", "sha256": "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e", "sizeBytes": 11343},
+        {"path": "README.md", "sha256": "3c090be37f829adc1e4cdb78733667437732541470430ab2cd785d7f0d460077", "sizeBytes": 6392},
+        {"path": "config.json", "sha256": "c0242402ad6a13b331ea320feea8c7e3776ffb7a4eff0757b9cd667e116d9a28", "sizeBytes": 663},
+        {"path": "generation_config.json", "sha256": "1a628a5775bc69cde01c6749a531150ca4d3189652c618a174f7077923acf3b1", "sizeBytes": 242},
+        {"path": "merges.txt", "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3", "sizeBytes": 1671839},
+        {"path": "model-00001-of-00004.safetensors", "sha256": "0b6f069918b07c064cbba8ae4f00f529aa9bbf84b7cdfcb7fc2694a40f6aa8ef", "sizeBytes": 4877660776},
+        {"path": "model-00002-of-00004.safetensors", "sha256": "c3d46733e7aa054ea7b063fbccd0a5a08446e7bd1814bef26936c5aa1331da62", "sizeBytes": 4932751008},
+        {"path": "model-00003-of-00004.safetensors", "sha256": "9fe45dacee087385b3d2d6dd27a7413a8a56d95f145772facc148fa86fc73446", "sizeBytes": 4330865200},
+        {"path": "model-00004-of-00004.safetensors", "sha256": "5aa6e5cbe642377fd441fb4e60e83cca96b2bcd9820e245b9ea06d94653f17f2", "sizeBytes": 1089994880},
+        {"path": "model.safetensors.index.json", "sha256": "998a078123ffc97763690de7f2a677eb89168af5eaf8a5e12e6bc24d18e25bdb", "sizeBytes": 27752},
+        {"path": "tokenizer.json", "sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539", "sizeBytes": 7031645},
+        {"path": "tokenizer_config.json", "sha256": "959e7f1d9a1b7641a6d6ce05ca97b75c7894fcb66cbe5a040406458fb1128ee4", "sizeBytes": 7305},
+        {"path": "vocab.json", "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910", "sizeBytes": 2776833}
+      ]
+    },
+    {
+      "candidateId": "qwen2.5-coder-14b-instruct",
+      "modelId": "Qwen/Qwen2.5-Coder-14B-Instruct",
+      "revision": "aedcc2d42b622764e023cf882b6652e646b95671",
+      "files": [
+        {"path": "LICENSE", "sha256": "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e", "sizeBytes": 11343},
+        {"path": "README.md", "sha256": "2bb69760ec931f9adbe560e95b5b9848dc35198508825547ffdc19934fc6f261", "sizeBytes": 6397},
+        {"path": "config.json", "sha256": "9051fe83840dcd3a0f7e9f5b3372fc3927419eb56983273eac2dc635a5da7eae", "sizeBytes": 663},
+        {"path": "generation_config.json", "sha256": "fdaccbcb02f3e1e7914ccb0f69ebe899071ffd27cf825166d823163e156870f2", "sizeBytes": 243},
+        {"path": "merges.txt", "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3", "sizeBytes": 1671839},
+        {"path": "model-00001-of-00006.safetensors", "sha256": "b14a60aa35c07e58da61cbe6c8b2819e60a043dd98001f14736045c6062e79a0", "sizeBytes": 4986211280},
+        {"path": "model-00002-of-00006.safetensors", "sha256": "03b8de22c48a523646ac0a38aa36471529e22cdd1238ce43b44bf5014d64098a", "sizeBytes": 4954847344},
+        {"path": "model-00003-of-00006.safetensors", "sha256": "97587f9d511af15bce6295a15b10c43f504b16fcddf22db9c87356df17ffff3f", "sizeBytes": 4954847392},
+        {"path": "model-00004-of-00006.safetensors", "sha256": "ed34a72606341f8774d21661ad8ec9e59deffad8c63ceebd2f6db86f163bee7d", "sizeBytes": 4954847392},
+        {"path": "model-00005-of-00006.safetensors", "sha256": "657a6388cfe547498159dfb6507b9c1ead09a6fbab154c22942bbf963aef4208", "sizeBytes": 4954847392},
+        {"path": "model-00006-of-00006.safetensors", "sha256": "3dbbc07addfc989662fd6bf88798970b278c98630f88eed5d23256fc99365dae", "sizeBytes": 4734533160},
+        {"path": "model.safetensors.index.json", "sha256": "425811015c8708208c9efc04c4cfae250c7927a1b04c99dda5a9121caf4bf77a", "sizeBytes": 47472},
+        {"path": "tokenizer.json", "sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539", "sizeBytes": 7031645},
+        {"path": "tokenizer_config.json", "sha256": "959e7f1d9a1b7641a6d6ce05ca97b75c7894fcb66cbe5a040406458fb1128ee4", "sizeBytes": 7305},
+        {"path": "vocab.json", "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910", "sizeBytes": 2776833}
+      ]
+    },
+    {
+      "candidateId": "gpt-oss-20b",
+      "modelId": "openai/gpt-oss-20b",
+      "revision": "6cee5e81ee83917806bbde320786a8fb61efebee",
+      "files": [
+        {"path": "LICENSE", "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd", "sizeBytes": 11357},
+        {"path": "README.md", "sha256": "03c2fcf292549176757b85c911e7dcf527aef3e4241d64b6caec94af3ecf3ac2", "sizeBytes": 7095},
+        {"path": "USAGE_POLICY", "sha256": "d6387ef7985019c45db8d9801e6ac5fd9f98f02b9f1c56f8c5af80c3e8f385d0", "sizeBytes": 200},
+        {"path": "chat_template.jinja", "sha256": "a4c9919cbbd4acdd51ccffe22da049264b1b73e59055fa58811a99efbd7c8146", "sizeBytes": 16738},
+        {"path": "config.json", "sha256": "3a2a26ded679375b7928ddeca59764df7cea83220c1961035f6d6e232659e9ce", "sizeBytes": 1806},
+        {"path": "generation_config.json", "sha256": "f9970ada892d2d1f72e3ed0a6535ccebadd11897318794ca671d8c7014c957da", "sizeBytes": 177},
+        {"path": "model-00000-of-00002.safetensors", "sha256": "16d0f997dcfc4462089d536bffe51b4bcea2f872f5c430be09ef8ed392312427", "sizeBytes": 4792272488},
+        {"path": "model-00001-of-00002.safetensors", "sha256": "4fbe328ab445455d6f58dc73852b85873bd626986310abd91cd4d2ce3245eaea", "sizeBytes": 4798702184},
+        {"path": "model-00002-of-00002.safetensors", "sha256": "a18106b209e9ab35c3406db4f6f12a927364a058b21e9d1373d682e20674b303", "sizeBytes": 4170342232},
+        {"path": "model.safetensors.index.json", "sha256": "0e085b977c4c9942f85938828e8c989ed7d5cdabf852e4da6a67c116cd502cd1", "sizeBytes": 36355},
+        {"path": "special_tokens_map.json", "sha256": "dd5e191d20c12d2fee1da5bae14ca1db0f5f4215300af691f23cdee97120a293", "sizeBytes": 98},
+        {"path": "tokenizer.json", "sha256": "0614fe83cadab421296e664e1f48f4261fa8fef6e03e63bb75c20f38e37d07d3", "sizeBytes": 27868174},
+        {"path": "tokenizer_config.json", "sha256": "9279e942392b742d633c7adbb89ebe002c98399db8926a7af5125c726f404070", "sizeBytes": 4200}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/promotion-evidence.v1.schema.json",
+  "title": "Hyperion deterministic unpromoted paired evidence report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "reportSha256", "evidenceOnly", "promotionStatus", "promotionEligible", "eligibleForPromotionReview", "completeCardinality", "dataRelease", "researchOnly", "evidenceStatus", "calibrationTaskSetSha256", "calibrationEvidenceSha256", "sealedTaskSetSha256", "policySha256", "candidate", "baseline", "suiteSufficiency", "overall", "domains", "criticalFailureTaskIds", "candidateNonStopTaskIds", "baselineNonStopTaskIds", "zeroCriticalFailures", "allFinishReasonsStop", "allEvidenceGatesPassed", "statement"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.promotion-evidence/v1"},
+    "reportSha256": {"$ref": "#/$defs/sha256"},
+    "evidenceOnly": {"const": true},
+    "promotionStatus": {"const": "unpromoted"},
+    "promotionEligible": {"const": false},
+    "eligibleForPromotionReview": {"type": "boolean"},
+    "completeCardinality": {"const": true},
+    "dataRelease": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/releaseIdentity"}]},
+    "researchOnly": {"type": "boolean"},
+    "evidenceStatus": {"enum": ["release-bound", "unpromoted-research"]},
+    "calibrationTaskSetSha256": {"$ref": "#/$defs/sha256"},
+    "calibrationEvidenceSha256": {"$ref": "#/$defs/sha256"},
+    "sealedTaskSetSha256": {"$ref": "#/$defs/sha256"},
+    "policySha256": {"$ref": "#/$defs/sha256"},
+    "candidate": {"$ref": "#/$defs/runEvidence"},
+    "baseline": {"$ref": "#/$defs/runEvidence"},
+    "suiteSufficiency": {"$ref": "#/$defs/sufficiency"},
+    "overall": {"$ref": "#/$defs/comparison"},
+    "domains": {"$ref": "#/$defs/domainComparisons"},
+    "criticalFailureTaskIds": {"$ref": "#/$defs/idArray"},
+    "candidateNonStopTaskIds": {"$ref": "#/$defs/idArray"},
+    "baselineNonStopTaskIds": {"$ref": "#/$defs/idArray"},
+    "zeroCriticalFailures": {"type": "boolean"},
+    "allFinishReasonsStop": {"type": "boolean"},
+    "allEvidenceGatesPassed": {"type": "boolean"},
+    "statement": {"type": "string", "minLength": 1, "maxLength": 1000}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"researchOnly": {"const": true}}},
+      "then": {
+        "properties": {
+          "dataRelease": {"type": "null"},
+          "evidenceStatus": {"const": "unpromoted-research"},
+          "eligibleForPromotionReview": {"const": false}
+        }
+      },
+      "else": {
+        "properties": {
+          "dataRelease": {"$ref": "#/$defs/releaseIdentity"},
+          "evidenceStatus": {"const": "release-bound"}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "releaseIdentity": {"type": "object", "additionalProperties": false, "required": ["releaseId", "releaseSha256", "manifestSha256"], "properties": {"releaseId": {"type": "string", "pattern": "^vqrel-[0-9a-f]{64}$"}, "releaseSha256": {"$ref": "#/$defs/sha256"}, "manifestSha256": {"$ref": "#/$defs/sha256"}}},
+    "rate": {"type": "number", "minimum": 0, "maximum": 1},
+    "count": {"type": "integer", "minimum": 0, "maximum": 100000},
+    "positiveCount": {"type": "integer", "minimum": 1, "maximum": 100000},
+    "idArray": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+    "servingProfile": {"type": "object", "additionalProperties": false, "required": ["id", "sha256"], "properties": {"id": {"$ref": "#/$defs/id"}, "sha256": {"$ref": "#/$defs/sha256"}}},
+    "runIdentity": {"type": "object", "additionalProperties": false, "required": ["responseSchemaVersion", "targetKind", "executionModelId", "candidateCatalogSha256", "candidateId", "modelId", "modelRevision", "servingProfile", "runId", "seed"], "properties": {"responseSchemaVersion": {"enum": ["daxalgo.hyperion.evaluation-response/v1", "daxalgo.hyperion.evaluation-response/v2"]}, "targetKind": {"enum": ["trained-adapter", "raw-base"]}, "executionModelId": {"type": "string", "pattern": "^daxalgo-(expert|base)-sha256-[0-9a-f]{64}$"}, "candidateCatalogSha256": {"$ref": "#/$defs/sha256"}, "candidateId": {"$ref": "#/$defs/id"}, "modelId": {"type": "string", "minLength": 1}, "modelRevision": {"type": "string", "pattern": "^[0-9a-f]{40}$"}, "servingProfile": {"$ref": "#/$defs/servingProfile"}, "runId": {"$ref": "#/$defs/id"}, "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647}}},
+    "runEvidence": {"type": "object", "additionalProperties": false, "required": ["identity", "responseSetSha256", "verifierResultSetSha256"], "properties": {"identity": {"$ref": "#/$defs/runIdentity"}, "responseSetSha256": {"$ref": "#/$defs/sha256"}, "verifierResultSetSha256": {"$ref": "#/$defs/sha256"}}},
+    "comparison": {"type": "object", "additionalProperties": false, "required": ["candidateAcceptedCount", "baselineAcceptedCount", "taskCount", "candidateAcceptedRate", "baselineAcceptedRate", "absoluteRateDelta", "threshold", "thresholdPassed", "noRegressionPassed"], "properties": {"candidateAcceptedCount": {"$ref": "#/$defs/count"}, "baselineAcceptedCount": {"$ref": "#/$defs/count"}, "taskCount": {"$ref": "#/$defs/count"}, "candidateAcceptedRate": {"$ref": "#/$defs/rate"}, "baselineAcceptedRate": {"$ref": "#/$defs/rate"}, "absoluteRateDelta": {"type": "number", "minimum": -1, "maximum": 1}, "threshold": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "thresholdPassed": {"type": "boolean"}, "noRegressionPassed": {"type": "boolean"}}},
+    "domainCounts": {"type": "object", "additionalProperties": false, "required": ["CSharp", "DaxAlgoArchitecture", "QuantitativeMath", "ProbabilityStatistics", "RiskManagement", "PortfolioManagement", "FinanceMarkets", "WpfUiDesign"], "properties": {"CSharp": {"$ref": "#/$defs/count"}, "DaxAlgoArchitecture": {"$ref": "#/$defs/count"}, "QuantitativeMath": {"$ref": "#/$defs/count"}, "ProbabilityStatistics": {"$ref": "#/$defs/count"}, "RiskManagement": {"$ref": "#/$defs/count"}, "PortfolioManagement": {"$ref": "#/$defs/count"}, "FinanceMarkets": {"$ref": "#/$defs/count"}, "WpfUiDesign": {"$ref": "#/$defs/count"}}},
+    "domainMinimums": {"type": "object", "additionalProperties": false, "required": ["CSharp", "DaxAlgoArchitecture", "QuantitativeMath", "ProbabilityStatistics", "RiskManagement", "PortfolioManagement", "FinanceMarkets", "WpfUiDesign"], "properties": {"CSharp": {"$ref": "#/$defs/positiveCount"}, "DaxAlgoArchitecture": {"$ref": "#/$defs/positiveCount"}, "QuantitativeMath": {"$ref": "#/$defs/positiveCount"}, "ProbabilityStatistics": {"$ref": "#/$defs/positiveCount"}, "RiskManagement": {"$ref": "#/$defs/positiveCount"}, "PortfolioManagement": {"$ref": "#/$defs/positiveCount"}, "FinanceMarkets": {"$ref": "#/$defs/positiveCount"}, "WpfUiDesign": {"$ref": "#/$defs/positiveCount"}}},
+    "domainComparisons": {"type": "object", "additionalProperties": false, "required": ["CSharp", "DaxAlgoArchitecture", "QuantitativeMath", "ProbabilityStatistics", "RiskManagement", "PortfolioManagement", "FinanceMarkets", "WpfUiDesign"], "properties": {"CSharp": {"$ref": "#/$defs/comparison"}, "DaxAlgoArchitecture": {"$ref": "#/$defs/comparison"}, "QuantitativeMath": {"$ref": "#/$defs/comparison"}, "ProbabilityStatistics": {"$ref": "#/$defs/comparison"}, "RiskManagement": {"$ref": "#/$defs/comparison"}, "PortfolioManagement": {"$ref": "#/$defs/comparison"}, "FinanceMarkets": {"$ref": "#/$defs/comparison"}, "WpfUiDesign": {"$ref": "#/$defs/comparison"}}},
+    "sufficiency": {"type": "object", "additionalProperties": false, "required": ["taskCount", "minimumTotalTasks", "criticalTaskCount", "minimumCriticalTasks", "perDomainTaskCounts", "minimumPerDomainTaskCounts", "perDomainContaminationGroupCounts", "minimumPerDomainContaminationGroupCounts", "passed"], "properties": {"taskCount": {"$ref": "#/$defs/positiveCount"}, "minimumTotalTasks": {"$ref": "#/$defs/positiveCount"}, "criticalTaskCount": {"$ref": "#/$defs/count"}, "minimumCriticalTasks": {"$ref": "#/$defs/positiveCount"}, "perDomainTaskCounts": {"$ref": "#/$defs/domainCounts"}, "minimumPerDomainTaskCounts": {"$ref": "#/$defs/domainMinimums"}, "perDomainContaminationGroupCounts": {"$ref": "#/$defs/domainCounts"}, "minimumPerDomainContaminationGroupCounts": {"$ref": "#/$defs/domainMinimums"}, "passed": {"type": "boolean"}}}
+  }
+}

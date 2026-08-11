@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/evaluation-task.v1.schema.json",
+  "title": "Hyperion calibration or sealed evaluation task v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "taskId", "taskSha256", "split", "taskKind", "domains", "messages", "promptSha256", "contextPack", "verifier", "contaminationGroup", "cutoffUtc", "criticality", "maxOutputTokens"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.evaluation-task/v1"},
+    "taskId": {"$ref": "#/$defs/id"},
+    "taskSha256": {"$ref": "#/$defs/sha256"},
+    "split": {"enum": ["calibration", "sealed"]},
+    "taskKind": {"type": "string", "minLength": 1},
+    "domains": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["CSharp", "DaxAlgoArchitecture", "QuantitativeMath", "ProbabilityStatistics", "RiskManagement", "PortfolioManagement", "FinanceMarkets", "WpfUiDesign"]}},
+    "messages": {"type": "array", "minItems": 1, "maxItems": 64, "items": {"type": "object", "additionalProperties": false, "required": ["role", "content"], "properties": {"role": {"enum": ["system", "user", "assistant"]}, "content": {"type": "string", "minLength": 1}}}},
+    "promptSha256": {"$ref": "#/$defs/sha256"},
+    "contextPack": {"type": "object", "additionalProperties": false, "required": ["version", "sha256"], "properties": {"version": {"type": "string", "minLength": 1, "maxLength": 500}, "sha256": {"$ref": "#/$defs/sha256"}}},
+    "verifier": {"type": "object", "additionalProperties": false, "required": ["id", "sha256", "requiredChecks"], "properties": {"id": {"$ref": "#/$defs/id"}, "sha256": {"$ref": "#/$defs/sha256"}, "requiredChecks": {"type": "array", "minItems": 1, "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/id"}}}},
+    "contaminationGroup": {"$ref": "#/$defs/id"},
+    "cutoffUtc": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "criticality": {"enum": ["standard", "critical"]},
+    "maxOutputTokens": {"type": "integer", "minimum": 1, "maximum": 262144}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

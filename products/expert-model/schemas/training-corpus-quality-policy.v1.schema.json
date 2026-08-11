@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/training-corpus-quality-policy.v1.schema.json",
+  "title": "Hyperion training corpus quality policy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "policyVersion",
+    "minimumRecordCount",
+    "minimumTaskCounts",
+    "minimumDomainWeightedCounts",
+    "minimumDomainTaskWeightedCounts",
+    "minimumDistinctContaminationGroupsByDomain",
+    "minimumDistinctContaminationGroups",
+    "minimumDistinctOrigins",
+    "minimumDistinctProducers",
+    "maximumDomainsPerRecord",
+    "maximumShares"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.training-corpus-quality-policy/v1"},
+    "policyVersion": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$"},
+    "minimumRecordCount": {"$ref": "#/$defs/positiveCount"},
+    "minimumTaskCounts": {
+      "type": "array",
+      "minItems": 11,
+      "maxItems": 11,
+      "items": {"$ref": "#/$defs/taskMinimum"}
+    },
+    "minimumDomainWeightedCounts": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {"$ref": "#/$defs/domainMinimum"}
+    },
+    "minimumDomainTaskWeightedCounts": {
+      "type": "array",
+      "maxItems": 88,
+      "items": {"$ref": "#/$defs/domainTaskMinimum"}
+    },
+    "minimumDistinctContaminationGroupsByDomain": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {"$ref": "#/$defs/domainGroupMinimum"}
+    },
+    "minimumDistinctContaminationGroups": {"$ref": "#/$defs/positiveCount"},
+    "minimumDistinctOrigins": {"type": "integer", "minimum": 1, "maximum": 4},
+    "minimumDistinctProducers": {"$ref": "#/$defs/positiveCount"},
+    "maximumDomainsPerRecord": {"type": "integer", "minimum": 1, "maximum": 8},
+    "maximumShares": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task", "domainWeighted", "domainTaskWeighted", "contaminationGroup", "origin", "producer"],
+      "properties": {
+        "task": {"$ref": "#/$defs/rational"},
+        "domainWeighted": {"$ref": "#/$defs/rational"},
+        "domainTaskWeighted": {"$ref": "#/$defs/rational"},
+        "contaminationGroup": {"$ref": "#/$defs/rational"},
+        "origin": {"$ref": "#/$defs/rational"},
+        "producer": {"$ref": "#/$defs/rational"}
+      }
+    }
+  },
+  "$defs": {
+    "count": {"type": "integer", "minimum": 0, "maximum": 100000},
+    "positiveCount": {"type": "integer", "minimum": 1, "maximum": 100000},
+    "rational": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numerator", "denominator"],
+      "properties": {
+        "numerator": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+        "denominator": {"type": "integer", "minimum": 1, "maximum": 1000000000}
+      }
+    },
+    "taskKind": {
+      "enum": ["ArchitectureDesign", "CodeGeneration", "CodeRepair", "CodeReview", "GeneralQuestionAnswering", "MarketAnalysis", "PortfolioAnalysis", "QuantitativeReasoning", "RiskAnalysis", "StatisticalReasoning", "WpfUiDesign"]
+    },
+    "domain": {
+      "enum": ["CSharp", "DaxAlgoArchitecture", "FinanceMarkets", "PortfolioManagement", "ProbabilityStatistics", "QuantitativeMath", "RiskManagement", "WpfUiDesign"]
+    },
+    "taskMinimum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskKind", "recordCount"],
+      "properties": {"taskKind": {"$ref": "#/$defs/taskKind"}, "recordCount": {"$ref": "#/$defs/count"}}
+    },
+    "domainMinimum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "weightedCount"],
+      "properties": {"domain": {"$ref": "#/$defs/domain"}, "weightedCount": {"$ref": "#/$defs/rational"}}
+    },
+    "domainTaskMinimum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "taskKind", "weightedCount"],
+      "properties": {"domain": {"$ref": "#/$defs/domain"}, "taskKind": {"$ref": "#/$defs/taskKind"}, "weightedCount": {"$ref": "#/$defs/rational"}}
+    },
+    "domainGroupMinimum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "distinctCount"],
+      "properties": {"domain": {"$ref": "#/$defs/domain"}, "distinctCount": {"$ref": "#/$defs/count"}}
+    }
+  }
+}

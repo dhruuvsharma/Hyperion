@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/expert-model-review-receipt.v1.schema.json",
+  "title": "DaxAlgo expert-model review receipt payload v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "receiptId", "decision", "datasetSha256", "exampleId", "taskKind", "domains", "conversationSha256", "verificationEvidenceSha256", "reviewedAtUtc", "reviewer", "reviewKind", "sftMetadataSha256", "authorizations", "approval", "issuedAtUtc", "notBeforeUtc", "expiresAtUtc"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.expert-model-review-receipt/v1"},
+    "receiptId": {"type": "string", "pattern": "^vqreview-[0-9a-f]{64}$"},
+    "decision": {"const": "approved"},
+    "datasetSha256": {"$ref": "#/$defs/sha256"},
+    "exampleId": {"$ref": "#/$defs/id"},
+    "taskKind": {"enum": ["ArchitectureDesign", "CodeGeneration", "CodeRepair", "GeneralQuestionAnswering", "MarketAnalysis", "PortfolioAnalysis", "QuantitativeReasoning", "RiskAnalysis", "StatisticalReasoning", "WpfUiDesign"]},
+    "domains": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"enum": ["CSharp", "DaxAlgoArchitecture", "QuantitativeMath", "ProbabilityStatistics", "RiskManagement", "PortfolioManagement", "FinanceMarkets", "WpfUiDesign"]}
+    },
+    "conversationSha256": {"$ref": "#/$defs/sha256"},
+    "verificationEvidenceSha256": {"$ref": "#/$defs/sha256"},
+    "reviewedAtUtc": {"$ref": "#/$defs/utcSecond"},
+    "reviewer": {"$ref": "#/$defs/id"},
+    "reviewKind": {"enum": ["deterministic-text", "daxq-executable"]},
+    "sftMetadataSha256": {"$ref": "#/$defs/sha256"},
+    "authorizations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evaluation", "training", "providerUpload"],
+      "properties": {
+        "evaluation": {"type": "boolean"},
+        "training": {"type": "boolean"},
+        "providerUpload": {"type": "boolean", "description": "Authorizes provider upload for SFT/provider training only and therefore implies training. Provider evaluation requires evaluation plus row/source mayUploadToProvider rights freshly rederived from the receipt-bound corpus."}
+      },
+      "allOf": [
+        {"if": {"properties": {"training": {"const": true}}}, "then": {"properties": {"evaluation": {"const": true}}}},
+        {"if": {"properties": {"providerUpload": {"const": true}}}, "then": {"properties": {"training": {"const": true}, "evaluation": {"const": true}}}}
+      ]
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approvalId", "actorId", "actorRole", "reference", "evidenceSha256", "evidenceSizeBytes", "approvedAtUtc"],
+      "properties": {
+        "approvalId": {"$ref": "#/$defs/id"},
+        "actorId": {"$ref": "#/$defs/id"},
+        "actorRole": {"$ref": "#/$defs/id"},
+        "reference": {"type": "string", "minLength": 1, "maxLength": 500, "pattern": "^[ -~]+$"},
+        "evidenceSha256": {"$ref": "#/$defs/sha256"},
+        "evidenceSizeBytes": {"type": "integer", "minimum": 1, "maximum": 16000000},
+        "approvedAtUtc": {"$ref": "#/$defs/utcSecond"}
+      }
+    },
+    "issuedAtUtc": {"$ref": "#/$defs/utcSecond"},
+    "notBeforeUtc": {"$ref": "#/$defs/utcSecond"},
+    "expiresAtUtc": {"$ref": "#/$defs/utcSecond"}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "utcSecond": {"type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"}
+  }
+}

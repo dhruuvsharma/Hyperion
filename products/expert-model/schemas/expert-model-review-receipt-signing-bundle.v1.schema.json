@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/expert-model-review-receipt-signing-bundle.v1.schema.json",
+  "title": "DaxAlgo non-authorizing expert-model review-receipt signing bundle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "bundleId", "status", "authority", "sourceCorpusSha256", "sourceCorpusSizeBytes", "receiptCount", "trust", "approval", "teacherLineageAdmission", "validity", "signatureContract", "requests"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.expert-model-review-receipt-signing-bundle/v1"},
+    "bundleId": {"type": "string", "pattern": "^vqreviewsigning-[0-9a-f]{64}$"},
+    "status": {"const": "unsigned-non-authorizing"},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewReceiptIssuance", "evaluation", "training", "providerUpload"],
+      "properties": {
+        "reviewReceiptIssuance": {"const": false},
+        "evaluation": {"const": false},
+        "training": {"const": false},
+        "providerUpload": {"const": false}
+      }
+    },
+    "sourceCorpusSha256": {"$ref": "#/$defs/sha256"},
+    "sourceCorpusSizeBytes": {"type": "integer", "minimum": 1, "maximum": 256000000},
+    "receiptCount": {"type": "integer", "minimum": 1, "maximum": 100000},
+    "trust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publicKeySpkiSha256", "audience", "keyId", "signerRole"],
+      "properties": {
+        "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+        "audience": {"$ref": "#/$defs/id"},
+        "keyId": {"$ref": "#/$defs/id"},
+        "signerRole": {"$ref": "#/$defs/id"}
+      }
+    },
+    "approval": {"$ref": "#/$defs/approval"},
+    "teacherLineageAdmission": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/teacherLineageAdmission"}
+      ]
+    },
+    "validity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuedAtUtc", "notBeforeUtc", "expiresAtUtc"],
+      "properties": {
+        "issuedAtUtc": {"$ref": "#/$defs/utcSecond"},
+        "notBeforeUtc": {"$ref": "#/$defs/utcSecond"},
+        "expiresAtUtc": {"$ref": "#/$defs/utcSecond"}
+      }
+    },
+    "signatureContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "hashAlgorithm", "messageType", "signatureInputEncoding", "bundleAuthorization", "acceptedSignatureFormats"],
+      "properties": {
+        "algorithm": {"const": "ES256"},
+        "hashAlgorithm": {"const": "SHA-256"},
+        "messageType": {"const": "digest"},
+        "signatureInputEncoding": {"const": "base64url"},
+        "bundleAuthorization": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["domain", "preimageEncoding", "hashAlgorithm", "messageType", "signatureInputEncoding", "scope"],
+          "properties": {
+            "domain": {"const": "daxalgo-expert-model-review-receipt-signing-bundle-authorization/v1"},
+            "preimageEncoding": {"const": "utf8-domain-null-canonical-bundle"},
+            "hashAlgorithm": {"const": "SHA-256"},
+            "messageType": {"const": "digest"},
+            "signatureInputEncoding": {"const": "base64url"},
+            "scope": {"const": "finalize-exact-review-receipt-set-only"}
+          }
+        },
+        "acceptedSignatureFormats": {
+          "type": "array",
+          "prefixItems": [
+            {"const": "asn1-der"},
+            {"const": "ieee-p1363-fixed-64"}
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "requests": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100000,
+      "items": {"$ref": "#/$defs/request"}
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "utcSecond": {"type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"},
+    "base64url": {"type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9_-]+$"},
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approvalId", "actorId", "actorRole", "reference", "evidenceSha256", "evidenceSizeBytes", "approvedAtUtc"],
+      "properties": {
+        "approvalId": {"$ref": "#/$defs/id"},
+        "actorId": {"$ref": "#/$defs/id"},
+        "actorRole": {"$ref": "#/$defs/id"},
+        "reference": {"type": "string", "minLength": 1, "maxLength": 500, "pattern": "^[ -~]+$"},
+        "evidenceSha256": {"$ref": "#/$defs/sha256"},
+        "evidenceSizeBytes": {"type": "integer", "minimum": 1, "maximum": 16000000},
+        "approvedAtUtc": {"$ref": "#/$defs/utcSecond"}
+      }
+    },
+    "teacherLineageAdmission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lineageAdmissionId", "payloadSha256", "envelopeSha256", "publicKeySpkiSha256", "reviewedCorpus", "materialization", "validity"],
+      "properties": {
+        "lineageAdmissionId": {"type": "string", "pattern": "^vqtlineage-[0-9a-f]{64}$"},
+        "payloadSha256": {"$ref": "#/$defs/sha256"},
+        "envelopeSha256": {"$ref": "#/$defs/sha256"},
+        "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+        "reviewedCorpus": {"$ref": "teacher-materialization-lineage-admission.v1.schema.json#/$defs/reviewedCorpus"},
+        "materialization": {"$ref": "teacher-materialization-lineage-admission.v1.schema.json#/$defs/materialization"},
+        "validity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reviewedAtUtc", "issuedAtUtc", "notBeforeUtc", "expiresAtUtc"],
+          "properties": {
+            "reviewedAtUtc": {"$ref": "#/$defs/utcSecond"},
+            "issuedAtUtc": {"$ref": "#/$defs/utcSecond"},
+            "notBeforeUtc": {"$ref": "#/$defs/utcSecond"},
+            "expiresAtUtc": {"$ref": "#/$defs/utcSecond"}
+          }
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ordinal", "exampleId", "receiptId", "payloadSha256", "payload", "signatureInputSha256", "signaturePreimage", "signatureInput"],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 0, "maximum": 99999},
+        "exampleId": {"$ref": "#/$defs/id"},
+        "receiptId": {"type": "string", "pattern": "^vqreview-[0-9a-f]{64}$"},
+        "payloadSha256": {"$ref": "#/$defs/sha256"},
+        "payload": {"allOf": [{"$ref": "#/$defs/base64url"}, {"maxLength": 170667}]},
+        "signatureInputSha256": {"$ref": "#/$defs/sha256"},
+        "signaturePreimage": {"allOf": [{"$ref": "#/$defs/base64url"}, {"maxLength": 341334}]},
+        "signatureInput": {"type": "string", "minLength": 43, "maxLength": 43, "pattern": "^[A-Za-z0-9_-]{43}$"}
+      }
+    }
+  }
+}

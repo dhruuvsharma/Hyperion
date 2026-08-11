@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/release-task-bindings.v2.schema.json",
+  "title": "DaxAlgo release task bindings v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "bindings"],
+  "properties": {
+    "schemaVersion": {
+      "const": "daxalgo.hyperion.release-task-bindings/v2"
+    },
+    "bindings": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100000,
+      "items": {
+        "$ref": "#/$defs/taskBinding"
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*)*$"
+    },
+    "namedAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        }
+      }
+    },
+    "taskBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "taskId",
+        "sourceExampleIds",
+        "contextPack",
+        "rubric",
+        "verifier"
+      ],
+      "properties": {
+        "taskId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "sourceExampleIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100000,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "contextPack": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["version", "path"],
+          "properties": {
+            "version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "path": {
+              "$ref": "#/$defs/relativePath"
+            }
+          }
+        },
+        "rubric": {
+          "$ref": "#/$defs/namedAsset"
+        },
+        "verifier": {
+          "$ref": "#/$defs/namedAsset"
+        }
+      }
+    }
+  }
+}

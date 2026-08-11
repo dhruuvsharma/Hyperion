@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/teacher-materialization-record.v1.schema.json",
+  "title": "Hyperion teacher materialization record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "materializationId", "purpose", "selectionManifestSha256", "inputs", "selection", "overlap", "output", "admissions", "authenticationStatus", "requiresAuthenticatedReviewReceipts", "reviewStatus", "eligibleForTraining"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.teacher-materialization-record/v1"},
+    "materializationId": {"type": "string", "pattern": "^vqtmat-[0-9a-f]{64}$"},
+    "purpose": {"const": "independent-review-draft"},
+    "selectionManifestSha256": {"$ref": "#/$defs/sha256"},
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selectionSnapshotPath", "candidateSetSha256", "generationManifestSha256", "candidateCatalogSha256", "overlapDenySetSha256", "candidateBatchId", "candidateManifestSha256"],
+      "properties": {
+        "selectionSnapshotPath": {"const": "inputs/snapshot/selection-manifest.json"},
+        "candidateSetSha256": {"$ref": "#/$defs/sha256"},
+        "generationManifestSha256": {"$ref": "#/$defs/sha256"},
+        "candidateCatalogSha256": {"$ref": "#/$defs/sha256"},
+        "overlapDenySetSha256": {"$ref": "#/$defs/sha256"},
+        "candidateBatchId": {"type": "string", "pattern": "^vqtgen-[0-9a-f]{64}$"},
+        "candidateManifestSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selectedBy", "selectedAtUtc", "basisSha256", "candidateCount"],
+      "properties": {
+        "selectedBy": {"$ref": "#/$defs/id"},
+        "selectedAtUtc": {"$ref": "#/$defs/utcSecond"},
+        "basisSha256": {"$ref": "#/$defs/sha256"},
+        "candidateCount": {"type": "integer", "minimum": 1, "maximum": 10000}
+      }
+    },
+    "overlap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["denySetId", "custodian", "createdAtUtc", "scopeSha256", "fileSha256"],
+      "properties": {
+        "denySetId": {"$ref": "#/$defs/id"},
+        "custodian": {"$ref": "#/$defs/id"},
+        "createdAtUtc": {"$ref": "#/$defs/utcSecond"},
+        "scopeSha256": {"$ref": "#/$defs/sha256"},
+        "fileSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes", "recordCount", "trainingEligibleCount"],
+      "properties": {
+        "path": {"const": "expert-dataset.draft.jsonl"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 1, "maximum": 100000000},
+        "recordCount": {"type": "integer", "minimum": 1, "maximum": 10000},
+        "trainingEligibleCount": {"const": 0}
+      }
+    },
+    "admissions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/admission"}
+    },
+    "authenticationStatus": {"const": "unsigned"},
+    "requiresAuthenticatedReviewReceipts": {"const": true},
+    "reviewStatus": {"const": "draft"},
+    "eligibleForTraining": {"const": false}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "utcSecond": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"
+    },
+    "admission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["admissionSha256", "exampleId", "candidateId", "candidateSha256", "batchId", "taskId", "taskSha256", "promptSha256", "authoredMessagesSha256", "normalizedFinalUserSha256", "contaminationGroupSha256", "outputSha256", "sourceContentSha256", "conversationSha256", "executionModelId", "chatTemplateSha256", "runtimeSha256"],
+      "properties": {
+        "admissionSha256": {"$ref": "#/$defs/sha256"},
+        "exampleId": {"$ref": "#/$defs/id"},
+        "candidateId": {"type": "string", "pattern": "^vqtgenrow-[0-9a-f]{64}$"},
+        "candidateSha256": {"$ref": "#/$defs/sha256"},
+        "batchId": {"type": "string", "pattern": "^vqtgen-[0-9a-f]{64}$"},
+        "taskId": {"$ref": "#/$defs/id"},
+        "taskSha256": {"$ref": "#/$defs/sha256"},
+        "promptSha256": {"$ref": "#/$defs/sha256"},
+        "authoredMessagesSha256": {"$ref": "#/$defs/sha256"},
+        "normalizedFinalUserSha256": {"$ref": "#/$defs/sha256"},
+        "contaminationGroupSha256": {"$ref": "#/$defs/sha256"},
+        "outputSha256": {"$ref": "#/$defs/sha256"},
+        "sourceContentSha256": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sha256"}
+        },
+        "conversationSha256": {"$ref": "#/$defs/sha256"},
+        "executionModelId": {"type": "string", "pattern": "^daxalgo-teacher-sha256-[0-9a-f]{64}$"},
+        "chatTemplateSha256": {"$ref": "#/$defs/sha256"},
+        "runtimeSha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/expert-model-sft-metadata.v2.schema.json",
+  "title": "DaxAlgo expert-model SFT metadata v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sourceCorpusSha256", "verificationEvidenceSha256", "id", "taskKind", "domains", "conversationSha256", "origin", "producer", "modelId", "modelRevision", "promptSha256", "profileVersion", "split", "contaminationGroup", "cutoffUtc", "sourceSchema"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.expert-model-sft-metadata/v2"},
+    "sourceCorpusSha256": {"$ref": "#/$defs/sha256", "description": "Identity of the exact source-corpus bytes; this does not prove correctness, rights, source availability, or honest review."},
+    "verificationEvidenceSha256": {"$ref": "#/$defs/sha256", "description": "Identity of the exact corpus-row verification evidence; this does not prove its truth or quality."},
+    "id": {"$ref": "#/$defs/id"},
+    "taskKind": {"enum": ["ArchitectureDesign", "CodeGeneration", "CodeRepair", "GeneralQuestionAnswering", "MarketAnalysis", "PortfolioAnalysis", "QuantitativeReasoning", "RiskAnalysis", "StatisticalReasoning", "WpfUiDesign"]},
+    "domains": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"enum": ["CSharp", "DaxAlgoArchitecture", "QuantitativeMath", "ProbabilityStatistics", "RiskManagement", "PortfolioManagement", "FinanceMarkets", "WpfUiDesign"]}
+    },
+    "conversationSha256": {"$ref": "#/$defs/sha256"},
+    "origin": {"enum": ["HumanAuthored", "OpenWeightTeacher", "HostedTeacher", "DerivedRepair"]},
+    "producer": {"type": "string", "minLength": 1, "maxLength": 500},
+    "modelId": {"type": ["string", "null"], "minLength": 1, "maxLength": 500},
+    "modelRevision": {"type": ["string", "null"], "minLength": 1, "maxLength": 500},
+    "promptSha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+    "profileVersion": {"type": ["string", "null"], "minLength": 1, "maxLength": 500},
+    "split": {"enum": ["development", "calibration", "sealed"]},
+    "contaminationGroup": {"$ref": "#/$defs/id"},
+    "cutoffUtc": {"type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{7}Z$"},
+    "sourceSchema": {"const": "expert-model-dataset/v1"}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

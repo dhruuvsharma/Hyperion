@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "daxalgo.hyperion.candidate-catalog/v1",
+  "catalogVersion": "1.0.0",
+  "candidates": [
+    {
+      "id": "qwen2.5-coder-7b-instruct",
+      "displayName": "Qwen2.5-Coder 7B Instruct",
+      "modelId": "Qwen/Qwen2.5-Coder-7B-Instruct",
+      "revision": "c03e6d358207e414f1eca0bb1891e29f1db0e242",
+      "license": "Apache-2.0",
+      "licenseUrl": "https://www.apache.org/licenses/LICENSE-2.0",
+      "officialSourceUrl": "https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct",
+      "roles": ["student"]
+    },
+    {
+      "id": "qwen2.5-coder-14b-instruct",
+      "displayName": "Qwen2.5-Coder 14B Instruct",
+      "modelId": "Qwen/Qwen2.5-Coder-14B-Instruct",
+      "revision": "aedcc2d42b622764e023cf882b6652e646b95671",
+      "license": "Apache-2.0",
+      "licenseUrl": "https://www.apache.org/licenses/LICENSE-2.0",
+      "officialSourceUrl": "https://huggingface.co/Qwen/Qwen2.5-Coder-14B-Instruct",
+      "roles": ["student"]
+    },
+    {
+      "id": "gpt-oss-20b",
+      "displayName": "gpt-oss-20b",
+      "modelId": "openai/gpt-oss-20b",
+      "revision": "6cee5e81ee83917806bbde320786a8fb61efebee",
+      "license": "Apache-2.0",
+      "licenseUrl": "https://www.apache.org/licenses/LICENSE-2.0",
+      "officialSourceUrl": "https://huggingface.co/openai/gpt-oss-20b",
+      "roles": ["student"]
+    },
+    {
+      "id": "qwen3-coder-30b-a3b-instruct",
+      "displayName": "Qwen3-Coder 30B-A3B Instruct",
+      "modelId": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "revision": "b2cff646eb4bb1d68355c01b18ae02e7cf42d120",
+      "license": "Apache-2.0",
+      "licenseUrl": "https://www.apache.org/licenses/LICENSE-2.0",
+      "officialSourceUrl": "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "roles": ["teacher", "fallback"]
+    }
+  ]
+}

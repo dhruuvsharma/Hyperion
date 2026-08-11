@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/model-promotion-envelope.v1.schema.json",
+  "title": "Hyperion authenticated model promotion envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "payloadType", "payloadEncoding", "payloadSha256", "payload", "algorithm", "signatureFormat", "audience", "keyId", "signerRole", "publicKeySpkiSha256", "signature"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.model-promotion-envelope/v1"},
+    "payloadType": {"const": "daxalgo.hyperion.model-promotion/v1"},
+    "payloadEncoding": {"const": "base64url"},
+    "payloadSha256": {"$ref": "#/$defs/sha256"},
+    "payload": {"type": "string", "minLength": 2, "maxLength": 666667, "pattern": "^[A-Za-z0-9_-]+$"},
+    "algorithm": {"const": "ES256"},
+    "signatureFormat": {"const": "ieee-p1363"},
+    "audience": {"$ref": "#/$defs/id"},
+    "keyId": {"$ref": "#/$defs/id"},
+    "signerRole": {"$ref": "#/$defs/id"},
+    "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+    "signature": {"type": "string", "minLength": 86, "maxLength": 86, "pattern": "^[A-Za-z0-9_-]{86}$"}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

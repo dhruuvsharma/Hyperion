@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/evaluation-authoring-approval-signing-bundle.v1.schema.json",
+  "title": "DaxAlgo non-authorizing evaluation-authoring approval signing bundle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "bundleId", "status", "authority", "trust", "authoringApprovalId", "inventorySha256", "signatureContract", "request"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.evaluation-authoring-approval-signing-bundle/v1"},
+    "bundleId": {"type": "string", "pattern": "^vqauthoringsigning-[0-9a-f]{64}$"},
+    "status": {"const": "unsigned-non-authorizing"},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evaluationAuthoringApprovalIssuance", "corpusReview", "release", "training", "baseSelection", "promotionDecision", "deployment", "hostedServing", "installation", "verifierExecution", "strategyExecution"],
+      "properties": {
+        "evaluationAuthoringApprovalIssuance": {"const": false},
+        "corpusReview": {"const": false},
+        "release": {"const": false},
+        "training": {"const": false},
+        "baseSelection": {"const": false},
+        "promotionDecision": {"const": false},
+        "deployment": {"const": false},
+        "hostedServing": {"const": false},
+        "installation": {"const": false},
+        "verifierExecution": {"const": false},
+        "strategyExecution": {"const": false}
+      }
+    },
+    "trust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publicKeySpkiSha256", "audience", "keyId", "signerRole"],
+      "properties": {
+        "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+        "audience": {"$ref": "#/$defs/id"},
+        "keyId": {"$ref": "#/$defs/id"},
+        "signerRole": {"$ref": "#/$defs/id"}
+      }
+    },
+    "authoringApprovalId": {"$ref": "#/$defs/authoringApprovalId"},
+    "inventorySha256": {"$ref": "#/$defs/sha256"},
+    "signatureContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "hashAlgorithm", "messageType", "signatureInputEncoding", "acceptedSignatureFormats"],
+      "properties": {
+        "algorithm": {"const": "ES256"},
+        "hashAlgorithm": {"const": "SHA-256"},
+        "messageType": {"const": "digest"},
+        "signatureInputEncoding": {"const": "base64url"},
+        "acceptedSignatureFormats": {
+          "type": "array",
+          "prefixItems": [
+            {"const": "asn1-der"},
+            {"const": "ieee-p1363-fixed-64"}
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authoringApprovalId", "payloadSha256", "payload", "signatureInputSha256", "signaturePreimage", "signatureInput"],
+      "properties": {
+        "authoringApprovalId": {"$ref": "#/$defs/authoringApprovalId"},
+        "payloadSha256": {"$ref": "#/$defs/sha256"},
+        "payload": {"allOf": [{"$ref": "#/$defs/base64url"}, {"maxLength": 1000000}]},
+        "signatureInputSha256": {"$ref": "#/$defs/sha256"},
+        "signaturePreimage": {"allOf": [{"$ref": "#/$defs/base64url"}, {"maxLength": 2000000}]},
+        "signatureInput": {"type": "string", "minLength": 43, "maxLength": 43, "pattern": "^[A-Za-z0-9_-]{43}$"}
+      }
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "base64url": {"type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9_-]+$"},
+    "authoringApprovalId": {"type": "string", "pattern": "^daxalgo-evaluation-authoring-approval-sha256-[0-9a-f]{64}$"}
+  }
+}

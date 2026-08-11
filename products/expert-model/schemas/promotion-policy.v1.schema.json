@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/promotion-policy.v1.schema.json",
+  "title": "Hyperion frozen calibration-derived promotion evidence policy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "policySha256", "policyId", "thresholdSourceSplit", "dataRelease", "researchOnly", "calibrationTaskSetSha256", "calibrationEvidenceSha256", "sealedTaskSetSha256", "frozenAtUtc", "candidateRun", "baselineRun", "minimumTotalTasks", "minimumCriticalTasks", "minimumPerDomainTaskCounts", "minimumPerDomainContaminationGroupCounts", "overallAcceptedRateThreshold", "perDomainAcceptedRateThresholds", "requireNoOverallRegression", "requireNoPerDomainRegression"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.promotion-policy/v1"},
+    "policySha256": {"$ref": "#/$defs/sha256"},
+    "policyId": {"$ref": "#/$defs/id"},
+    "thresholdSourceSplit": {"const": "calibration"},
+    "dataRelease": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/releaseIdentity"}]},
+    "researchOnly": {"type": "boolean"},
+    "calibrationTaskSetSha256": {"$ref": "#/$defs/sha256"},
+    "calibrationEvidenceSha256": {"$ref": "#/$defs/sha256"},
+    "sealedTaskSetSha256": {"$ref": "#/$defs/sha256"},
+    "frozenAtUtc": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "candidateRun": {"$ref": "#/$defs/runIdentity"},
+    "baselineRun": {"$ref": "#/$defs/runIdentity"},
+    "minimumTotalTasks": {"type": "integer", "minimum": 1, "maximum": 100000},
+    "minimumCriticalTasks": {"type": "integer", "minimum": 1, "maximum": 100000},
+    "minimumPerDomainTaskCounts": {"$ref": "#/$defs/domainMinimums"},
+    "minimumPerDomainContaminationGroupCounts": {"$ref": "#/$defs/domainMinimums"},
+    "overallAcceptedRateThreshold": {"$ref": "#/$defs/rate"},
+    "perDomainAcceptedRateThresholds": {"$ref": "#/$defs/domainRates"},
+    "requireNoOverallRegression": {"const": true},
+    "requireNoPerDomainRegression": {"const": true}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"researchOnly": {"const": true}}},
+      "then": {"properties": {"dataRelease": {"type": "null"}}},
+      "else": {"properties": {"dataRelease": {"$ref": "#/$defs/releaseIdentity"}}}
+    }
+  ],
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "releaseIdentity": {"type": "object", "additionalProperties": false, "required": ["releaseId", "releaseSha256", "manifestSha256"], "properties": {"releaseId": {"type": "string", "pattern": "^vqrel-[0-9a-f]{64}$"}, "releaseSha256": {"$ref": "#/$defs/sha256"}, "manifestSha256": {"$ref": "#/$defs/sha256"}}},
+    "rate": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+    "servingProfile": {"type": "object", "additionalProperties": false, "required": ["id", "sha256"], "properties": {"id": {"$ref": "#/$defs/id"}, "sha256": {"$ref": "#/$defs/sha256"}}},
+    "runIdentity": {"type": "object", "additionalProperties": false, "required": ["responseSchemaVersion", "targetKind", "executionModelId", "candidateCatalogSha256", "candidateId", "modelId", "modelRevision", "servingProfile", "runId", "seed"], "properties": {"responseSchemaVersion": {"enum": ["daxalgo.hyperion.evaluation-response/v1", "daxalgo.hyperion.evaluation-response/v2"]}, "targetKind": {"enum": ["trained-adapter", "raw-base"]}, "executionModelId": {"type": "string", "pattern": "^daxalgo-(expert|base)-sha256-[0-9a-f]{64}$"}, "candidateCatalogSha256": {"$ref": "#/$defs/sha256"}, "candidateId": {"$ref": "#/$defs/id"}, "modelId": {"type": "string", "minLength": 1}, "modelRevision": {"type": "string", "pattern": "^[0-9a-f]{40}$"}, "servingProfile": {"$ref": "#/$defs/servingProfile"}, "runId": {"$ref": "#/$defs/id"}, "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647}}},
+    "domainMinimums": {"type": "object", "additionalProperties": false, "required": ["CSharp", "DaxAlgoArchitecture", "QuantitativeMath", "ProbabilityStatistics", "RiskManagement", "PortfolioManagement", "FinanceMarkets", "WpfUiDesign"], "properties": {"CSharp": {"$ref": "#/$defs/count"}, "DaxAlgoArchitecture": {"$ref": "#/$defs/count"}, "QuantitativeMath": {"$ref": "#/$defs/count"}, "ProbabilityStatistics": {"$ref": "#/$defs/count"}, "RiskManagement": {"$ref": "#/$defs/count"}, "PortfolioManagement": {"$ref": "#/$defs/count"}, "FinanceMarkets": {"$ref": "#/$defs/count"}, "WpfUiDesign": {"$ref": "#/$defs/count"}}},
+    "domainRates": {"type": "object", "additionalProperties": false, "required": ["CSharp", "DaxAlgoArchitecture", "QuantitativeMath", "ProbabilityStatistics", "RiskManagement", "PortfolioManagement", "FinanceMarkets", "WpfUiDesign"], "properties": {"CSharp": {"$ref": "#/$defs/rate"}, "DaxAlgoArchitecture": {"$ref": "#/$defs/rate"}, "QuantitativeMath": {"$ref": "#/$defs/rate"}, "ProbabilityStatistics": {"$ref": "#/$defs/rate"}, "RiskManagement": {"$ref": "#/$defs/rate"}, "PortfolioManagement": {"$ref": "#/$defs/rate"}, "FinanceMarkets": {"$ref": "#/$defs/rate"}, "WpfUiDesign": {"$ref": "#/$defs/rate"}}},
+    "count": {"type": "integer", "minimum": 1, "maximum": 100000}
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/base-model-selection-signature.v1.schema.json",
+  "title": "DaxAlgo detached base-model selection signature v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "signatureId", "signingBundleId", "signingBundleSha256", "selectionId", "evaluationMatrixId", "candidateCatalogSha256", "sourceLockSha256", "selectedCandidateId", "selectedSnapshotSha256", "selectedFileTreeSha256", "approvalEvidenceSha256", "payloadSha256", "signatureInputSha256", "publicKeySpkiSha256", "format", "signature"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.base-model-selection-signature/v1"},
+    "signatureId": {"type": "string", "pattern": "^vqbaseselectionsignature-[0-9a-f]{64}$"},
+    "signingBundleId": {"type": "string", "pattern": "^vqbaseselectionsigning-[0-9a-f]{64}$"},
+    "signingBundleSha256": {"$ref": "#/$defs/sha256"},
+    "selectionId": {"type": "string", "pattern": "^vqbaseselect-[0-9a-f]{64}$"},
+    "evaluationMatrixId": {"type": "string", "pattern": "^vqbasebakeoff-[0-9a-f]{64}$"},
+    "candidateCatalogSha256": {"$ref": "#/$defs/sha256"},
+    "sourceLockSha256": {"$ref": "#/$defs/sha256"},
+    "selectedCandidateId": {"$ref": "#/$defs/id"},
+    "selectedSnapshotSha256": {"$ref": "#/$defs/sha256"},
+    "selectedFileTreeSha256": {"$ref": "#/$defs/sha256"},
+    "approvalEvidenceSha256": {"$ref": "#/$defs/sha256"},
+    "payloadSha256": {"$ref": "#/$defs/sha256"},
+    "signatureInputSha256": {"$ref": "#/$defs/sha256"},
+    "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+    "format": {"enum": ["asn1-der", "ieee-p1363-fixed-64"]},
+    "signature": {"type": "string", "minLength": 1, "maxLength": 107, "pattern": "^[A-Za-z0-9_-]+$"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"format": {"const": "ieee-p1363-fixed-64"}}, "required": ["format"]},
+      "then": {"properties": {"signature": {"minLength": 86, "maxLength": 86}}}
+    }
+  ],
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

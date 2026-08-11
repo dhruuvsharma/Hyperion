@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/engine-wrapper.v5.schema.json",
+  "title": "Hyperion evaluation-authoring-approved promoted-model engine wrapper v5",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "promotion", "engine", "service", "baseSnapshot"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.engine-wrapper/v5"},
+    "promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "publicKeyPath", "reviewReceiptTrust", "evaluationAuthoringApprovalTrust", "candidateAttestationTrust", "baselineAttestationTrust", "csharpVerifierReplayAudit", "expectedAudience", "expectedKeyId", "expectedSignerRole", "expectedDeploymentId", "expectedEnvironment", "expectedEnvelopeSha256", "expectedServingProfileSha256", "sources"],
+      "properties": {
+        "path": {"$ref": "#/$defs/path"},
+        "publicKeyPath": {"$ref": "#/$defs/path"},
+        "reviewReceiptTrust": {"$ref": "#/$defs/signingTrust"},
+        "evaluationAuthoringApprovalTrust": {"$ref": "#/$defs/signingTrust"},
+        "candidateAttestationTrust": {"$ref": "#/$defs/nullableResponseAttestationTrust"},
+        "baselineAttestationTrust": {"$ref": "#/$defs/nullableResponseAttestationTrust"},
+        "csharpVerifierReplayAudit": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "expectedEnvelopeSha256", "trust"],
+              "properties": {
+                "path": {"$ref": "#/$defs/path"},
+                "expectedEnvelopeSha256": {"$ref": "#/$defs/sha256"},
+                "trust": {"$ref": "#/$defs/signingTrust"}
+              }
+            }
+          ]
+        },
+        "expectedAudience": {"$ref": "#/$defs/id"},
+        "expectedKeyId": {"$ref": "#/$defs/id"},
+        "expectedSignerRole": {"$ref": "#/$defs/id"},
+        "expectedDeploymentId": {"$ref": "#/$defs/id"},
+        "expectedEnvironment": {"$ref": "#/$defs/id"},
+        "expectedEnvelopeSha256": {"$ref": "#/$defs/sha256"},
+        "expectedServingProfileSha256": {"$ref": "#/$defs/sha256"},
+        "sources": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["promotionEvidencePath", "calibrationTasksPath", "calibrationEvidencePath", "sealedTasksPath", "responsesPath", "verifierResultsPath", "baselineResponsesPath", "baselineVerifierResultsPath", "policyPath", "dataReleasePath", "catalogPath", "servingProfilePath", "artifactPath", "manifestPath", "approvalEvidencePath", "hostedDeploymentPolicyPath"],
+          "properties": {
+            "promotionEvidencePath": {"$ref": "#/$defs/path"},
+            "calibrationTasksPath": {"$ref": "#/$defs/path"},
+            "calibrationEvidencePath": {"$ref": "#/$defs/path"},
+            "sealedTasksPath": {"$ref": "#/$defs/path"},
+            "responsesPath": {"$ref": "#/$defs/path"},
+            "verifierResultsPath": {"$ref": "#/$defs/path"},
+            "baselineResponsesPath": {"$ref": "#/$defs/path"},
+            "baselineVerifierResultsPath": {"$ref": "#/$defs/path"},
+            "policyPath": {"$ref": "#/$defs/path"},
+            "dataReleasePath": {"$ref": "#/$defs/path"},
+            "catalogPath": {"$ref": "#/$defs/path"},
+            "servingProfilePath": {"$ref": "#/$defs/path"},
+            "artifactPath": {"$ref": "#/$defs/path"},
+            "manifestPath": {"$ref": "#/$defs/path"},
+            "approvalEvidencePath": {"$ref": "#/$defs/path"},
+            "hostedDeploymentPolicyPath": {"$ref": "#/$defs/path"}
+          }
+        }
+      }
+    },
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executablePath", "executableSha256", "containerImageDigestEnvironment", "childHost", "childPort", "childUserId", "childGroupId", "startupTimeoutSeconds", "healthIntervalSeconds", "integrityIntervalSeconds", "requestTimeoutSeconds", "shutdownGraceSeconds", "environmentAllowlist"],
+      "properties": {
+        "executablePath": {"$ref": "#/$defs/path"},
+        "executableSha256": {"$ref": "#/$defs/sha256"},
+        "containerImageDigestEnvironment": {"$ref": "#/$defs/environmentName"},
+        "childHost": {"const": "127.0.0.1"},
+        "childPort": {"type": "integer", "minimum": 1, "maximum": 65535},
+        "childUserId": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+        "childGroupId": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+        "startupTimeoutSeconds": {"type": "number", "minimum": 1, "maximum": 3600},
+        "healthIntervalSeconds": {"type": "number", "minimum": 0.1, "maximum": 60},
+        "integrityIntervalSeconds": {"type": "number", "minimum": 1, "maximum": 300},
+        "requestTimeoutSeconds": {"type": "number", "minimum": 0.1, "maximum": 600},
+        "shutdownGraceSeconds": {"type": "number", "minimum": 0, "maximum": 60},
+        "environmentAllowlist": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/childEnvironmentName"}
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["listenHost", "listenPort", "bearerTokenEnvironment", "readinessHmacKeyEnvironment", "readinessKeyId", "maxRequestBytes", "maxResponseBytes"],
+      "properties": {
+        "listenHost": {"const": "127.0.0.1"},
+        "listenPort": {"type": "integer", "minimum": 1, "maximum": 65535},
+        "bearerTokenEnvironment": {"$ref": "#/$defs/environmentName"},
+        "readinessHmacKeyEnvironment": {"$ref": "#/$defs/environmentName"},
+        "readinessKeyId": {"$ref": "#/$defs/id"},
+        "maxRequestBytes": {"type": "integer", "minimum": 1024, "maximum": 8000000},
+        "maxResponseBytes": {"type": "integer", "minimum": 1024, "maximum": 16000000}
+      }
+    },
+    "baseSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshotPath", "selectionTrust"],
+      "properties": {
+        "snapshotPath": {"$ref": "#/$defs/path"},
+        "selectionTrust": {"$ref": "#/$defs/signingTrust"}
+      }
+    }
+  },
+  "$defs": {
+    "path": {"type": "string", "minLength": 1, "maxLength": 2000},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "id": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"},
+    "environmentName": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"},
+    "signingTrust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publicKeyPath", "publicKeySpkiSha256", "audience", "keyId", "signerRole"],
+      "properties": {
+        "publicKeyPath": {"$ref": "#/$defs/path"},
+        "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+        "audience": {"$ref": "#/$defs/id"},
+        "keyId": {"$ref": "#/$defs/id"},
+        "signerRole": {"$ref": "#/$defs/id"}
+      }
+    },
+    "responseAttestationTrust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["activationTrust", "runtimePublicKeyPath"],
+      "properties": {
+        "activationTrust": {"$ref": "#/$defs/signingTrust"},
+        "runtimePublicKeyPath": {"$ref": "#/$defs/path"}
+      }
+    },
+    "nullableResponseAttestationTrust": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/responseAttestationTrust"}]
+    },
+    "childEnvironmentName": {
+      "enum": ["CUDA_DEVICE_ORDER", "CUDA_VISIBLE_DEVICES", "HF_HOME", "HF_HUB_CACHE", "LANG", "LC_ALL", "NCCL_DEBUG", "NCCL_IB_DISABLE", "NCCL_P2P_DISABLE", "NVIDIA_DRIVER_CAPABILITIES", "NVIDIA_VISIBLE_DEVICES", "OMP_NUM_THREADS", "PATH", "SYSTEMROOT", "TEMP", "TMP", "TMPDIR", "TOKENIZERS_PARALLELISM", "TORCH_HOME", "TRANSFORMERS_CACHE", "WINDIR"]
+    }
+  }
+}

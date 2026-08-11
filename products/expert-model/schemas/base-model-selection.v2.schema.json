@@ -1,0 +1,294 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/base-model-selection.v2.schema.json",
+  "title": "DaxAlgo base-model training selection payload v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "selectionId",
+    "decision",
+    "trainingAuthorized",
+    "issuedAtUtc",
+    "notBeforeUtc",
+    "expiresAtUtc",
+    "dataRelease",
+    "evaluationMatrix",
+    "selected",
+    "approval",
+    "statement"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.base-model-selection/v2"},
+    "selectionId": {"type": "string", "pattern": "^vqbaseselect-[0-9a-f]{64}$"},
+    "decision": {"const": "approved-training-base"},
+    "trainingAuthorized": {"const": true},
+    "issuedAtUtc": {"$ref": "#/$defs/utc"},
+    "notBeforeUtc": {"$ref": "#/$defs/utc"},
+    "expiresAtUtc": {"$ref": "#/$defs/utc"},
+    "dataRelease": {"$ref": "#/$defs/release"},
+    "evaluationMatrix": {"$ref": "#/$defs/evaluationMatrix"},
+    "selected": {"$ref": "#/$defs/target"},
+    "approval": {"$ref": "#/$defs/approval"},
+    "statement": {"const": "Authenticates a catalog-complete reviewed student bake-off and the exact chosen snapshot for training only; it is not a checkpoint, training result, promotion, deployment, or quality claim."}
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"
+    },
+    "modelId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]{0,499}$"
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "utc": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["releaseId", "releaseSha256", "manifestSha256"],
+      "properties": {
+        "releaseId": {"type": "string", "pattern": "^vqrel-[0-9a-f]{64}$"},
+        "releaseSha256": {"$ref": "#/$defs/sha256"},
+        "manifestSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "servingProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sha256"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "responseSchemaVersion",
+        "targetKind",
+        "executionModelId",
+        "candidateCatalogSha256",
+        "candidateId",
+        "modelId",
+        "modelRevision",
+        "servingProfile",
+        "runId",
+        "seed"
+      ],
+      "properties": {
+        "responseSchemaVersion": {"type": "string", "minLength": 1, "maxLength": 200},
+        "targetKind": {"enum": ["trained-adapter", "raw-base"]},
+        "executionModelId": {"$ref": "#/$defs/id"},
+        "candidateCatalogSha256": {"$ref": "#/$defs/sha256"},
+        "candidateId": {"$ref": "#/$defs/id"},
+        "modelId": {"$ref": "#/$defs/modelId"},
+        "modelRevision": {"$ref": "#/$defs/revision"},
+        "servingProfile": {"$ref": "#/$defs/servingProfile"},
+        "runId": {"$ref": "#/$defs/id"},
+        "seed": {"type": "integer", "minimum": 0, "maximum": 2147483647}
+      }
+    },
+    "candidateRun": {
+      "allOf": [
+        {"$ref": "#/$defs/run"},
+        {
+          "properties": {
+            "responseSchemaVersion": {"const": "daxalgo.hyperion.evaluation-response/v2"},
+            "targetKind": {"const": "raw-base"}
+          }
+        }
+      ]
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidateCatalogSha256",
+        "candidateId",
+        "modelId",
+        "modelRevision",
+        "profileId",
+        "profileSha256",
+        "executionModelId",
+        "sourceLockSha256",
+        "snapshotManifestSha256",
+        "snapshotSha256",
+        "fileTreeSha256",
+        "chatTemplateSha256"
+      ],
+      "properties": {
+        "candidateCatalogSha256": {"$ref": "#/$defs/sha256"},
+        "candidateId": {"$ref": "#/$defs/id"},
+        "modelId": {"$ref": "#/$defs/modelId"},
+        "modelRevision": {"$ref": "#/$defs/revision"},
+        "profileId": {"$ref": "#/$defs/id"},
+        "profileSha256": {"$ref": "#/$defs/sha256"},
+        "executionModelId": {"$ref": "#/$defs/id"},
+        "sourceLockSha256": {"$ref": "#/$defs/sha256"},
+        "snapshotManifestSha256": {"$ref": "#/$defs/sha256"},
+        "snapshotSha256": {"$ref": "#/$defs/sha256"},
+        "fileTreeSha256": {"$ref": "#/$defs/sha256"},
+        "chatTemplateSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reportSha256",
+        "reportFileSha256",
+        "policySha256",
+        "policyFileSha256",
+        "calibrationTasksFileSha256",
+        "calibrationTaskSetSha256",
+        "calibrationEvidenceSha256",
+        "sealedTasksFileSha256",
+        "sealedTaskSetSha256",
+        "candidateResponsesFileSha256",
+        "candidateResponseSetSha256",
+        "candidateVerifierResultsFileSha256",
+        "candidateVerifierResultSetSha256",
+        "baselineResponsesFileSha256",
+        "baselineResponseSetSha256",
+        "baselineVerifierResultsFileSha256",
+        "baselineVerifierResultSetSha256",
+        "candidateRun",
+        "baselineRun"
+      ],
+      "properties": {
+        "reportSha256": {"$ref": "#/$defs/sha256"},
+        "reportFileSha256": {"$ref": "#/$defs/sha256"},
+        "policySha256": {"$ref": "#/$defs/sha256"},
+        "policyFileSha256": {"$ref": "#/$defs/sha256"},
+        "calibrationTasksFileSha256": {"$ref": "#/$defs/sha256"},
+        "calibrationTaskSetSha256": {"$ref": "#/$defs/sha256"},
+        "calibrationEvidenceSha256": {"$ref": "#/$defs/sha256"},
+        "sealedTasksFileSha256": {"$ref": "#/$defs/sha256"},
+        "sealedTaskSetSha256": {"$ref": "#/$defs/sha256"},
+        "candidateResponsesFileSha256": {"$ref": "#/$defs/sha256"},
+        "candidateResponseSetSha256": {"$ref": "#/$defs/sha256"},
+        "candidateVerifierResultsFileSha256": {"$ref": "#/$defs/sha256"},
+        "candidateVerifierResultSetSha256": {"$ref": "#/$defs/sha256"},
+        "baselineResponsesFileSha256": {"$ref": "#/$defs/sha256"},
+        "baselineResponseSetSha256": {"$ref": "#/$defs/sha256"},
+        "baselineVerifierResultsFileSha256": {"$ref": "#/$defs/sha256"},
+        "baselineVerifierResultSetSha256": {"$ref": "#/$defs/sha256"},
+        "candidateRun": {"$ref": "#/$defs/candidateRun"},
+        "baselineRun": {"$ref": "#/$defs/candidateRun"}
+      }
+    },
+    "shared": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "calibrationTasksFileSha256",
+        "calibrationTaskSetSha256",
+        "calibrationEvidenceSha256",
+        "sealedTasksFileSha256",
+        "sealedTaskSetSha256",
+        "baselineResponsesFileSha256",
+        "baselineResponseSetSha256",
+        "baselineVerifierResultsFileSha256",
+        "baselineVerifierResultSetSha256",
+        "baselineRun"
+      ],
+      "properties": {
+        "calibrationTasksFileSha256": {"$ref": "#/$defs/sha256"},
+        "calibrationTaskSetSha256": {"$ref": "#/$defs/sha256"},
+        "calibrationEvidenceSha256": {"$ref": "#/$defs/sha256"},
+        "sealedTasksFileSha256": {"$ref": "#/$defs/sha256"},
+        "sealedTaskSetSha256": {"$ref": "#/$defs/sha256"},
+        "baselineResponsesFileSha256": {"$ref": "#/$defs/sha256"},
+        "baselineResponseSetSha256": {"$ref": "#/$defs/sha256"},
+        "baselineVerifierResultsFileSha256": {"$ref": "#/$defs/sha256"},
+        "baselineVerifierResultSetSha256": {"$ref": "#/$defs/sha256"},
+        "baselineRun": {"$ref": "#/$defs/candidateRun"}
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ordinal", "candidateId", "eligibleForSelection", "evaluation", "target"],
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 0},
+        "candidateId": {"$ref": "#/$defs/id"},
+        "eligibleForSelection": {"type": "boolean"},
+        "evaluation": {"$ref": "#/$defs/evaluation"},
+        "target": {"$ref": "#/$defs/target"}
+      }
+    },
+    "evaluationMatrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "matrixId",
+        "candidateCatalogSha256",
+        "sourceLockSha256",
+        "requiredRole",
+        "requiredCandidateIds",
+        "policyFamilySha256",
+        "policyId",
+        "frozenAtUtc",
+        "shared",
+        "entries"
+      ],
+      "properties": {
+        "matrixId": {"type": "string", "pattern": "^vqbasebakeoff-[0-9a-f]{64}$"},
+        "candidateCatalogSha256": {"$ref": "#/$defs/sha256"},
+        "sourceLockSha256": {"$ref": "#/$defs/sha256"},
+        "requiredRole": {"const": "student"},
+        "requiredCandidateIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        },
+        "policyFamilySha256": {"$ref": "#/$defs/sha256"},
+        "policyId": {"$ref": "#/$defs/id"},
+        "frozenAtUtc": {"$ref": "#/$defs/utc"},
+        "shared": {"$ref": "#/$defs/shared"},
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {"$ref": "#/$defs/entry"}
+        }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approvalId",
+        "actorId",
+        "actorRole",
+        "reference",
+        "approvedAtUtc",
+        "evidenceSha256",
+        "evidenceSizeBytes"
+      ],
+      "properties": {
+        "approvalId": {"$ref": "#/$defs/id"},
+        "actorId": {"$ref": "#/$defs/id"},
+        "actorRole": {"$ref": "#/$defs/id"},
+        "reference": {"type": "string", "minLength": 1, "maxLength": 500},
+        "approvedAtUtc": {"$ref": "#/$defs/utc"},
+        "evidenceSha256": {"$ref": "#/$defs/sha256"},
+        "evidenceSizeBytes": {"type": "integer", "minimum": 1, "maximum": 16000000}
+      }
+    }
+  }
+}

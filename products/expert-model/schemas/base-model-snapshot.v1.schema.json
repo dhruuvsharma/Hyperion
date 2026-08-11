@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/base-model-snapshot.v1.schema.json",
+  "title": "Hyperion immutable base-model snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "snapshotSha256", "candidateCatalogSha256", "sourceLockSha256", "candidateId", "baseModel", "chatTemplateSha256", "fileTreeSha256", "files"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.base-model-snapshot/v1"},
+    "snapshotSha256": {"$ref": "#/$defs/sha256"},
+    "candidateCatalogSha256": {"$ref": "#/$defs/sha256"},
+    "sourceLockSha256": {"$ref": "#/$defs/sha256"},
+    "candidateId": {"$ref": "#/$defs/id"},
+    "baseModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modelId", "revision"],
+      "properties": {
+        "modelId": {"type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$"},
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+      }
+    },
+    "chatTemplateSha256": {"$ref": "#/$defs/sha256"},
+    "fileTreeSha256": {"$ref": "#/$defs/sha256"},
+    "files": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 1024,
+      "items": {"$ref": "#/$defs/file"}
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "sizeBytes"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "oneOf": [
+            {"enum": ["LICENSE", "LICENSE.txt", "NOTICE", "README.md", "USAGE_POLICY", "added_tokens.json", "chat_template.jinja", "config.json", "generation_config.json", "merges.txt", "model.safetensors", "model.safetensors.index.json", "special_tokens_map.json", "tokenizer.json", "tokenizer_config.json", "vocab.json"]},
+            {"pattern": "^model-[0-9]{5}-of-[0-9]{5}\\.safetensors$"}
+          ]
+        },
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "sizeBytes": {"type": "integer", "minimum": 0, "maximum": 100000000000}
+      }
+    }
+  }
+}

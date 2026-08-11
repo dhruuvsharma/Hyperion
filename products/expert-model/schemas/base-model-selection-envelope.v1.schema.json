@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/base-model-selection-envelope.v1.schema.json",
+  "title": "Signed DaxAlgo base-model selection envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "payloadType",
+    "payloadEncoding",
+    "payloadSha256",
+    "payload",
+    "algorithm",
+    "signatureFormat",
+    "audience",
+    "keyId",
+    "signerRole",
+    "publicKeySpkiSha256",
+    "signature"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.hyperion.base-model-selection-envelope/v1"},
+    "payloadType": {"const": "daxalgo.hyperion.base-model-selection/v1"},
+    "payloadEncoding": {"const": "base64url"},
+    "payloadSha256": {"$ref": "#/$defs/sha256"},
+    "payload": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$", "maxLength": 1000000},
+    "algorithm": {"const": "ES256"},
+    "signatureFormat": {"const": "ieee-p1363"},
+    "audience": {"$ref": "#/$defs/id"},
+    "keyId": {"$ref": "#/$defs/id"},
+    "signerRole": {"$ref": "#/$defs/id"},
+    "publicKeySpkiSha256": {"$ref": "#/$defs/sha256"},
+    "signature": {"type": "string", "pattern": "^[A-Za-z0-9_-]{86}$"}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

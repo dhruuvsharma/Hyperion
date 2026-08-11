@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daxalgo.local/schemas/hyperion/csharp-strategy-verification-expectations.v1.schema.json",
+  "title": "Hidden DaxAlgo headless C# strategy verification expectations v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "requestSha256", "cases"],
+  "properties": {
+    "schemaVersion": {"const": "daxalgo.verifier.headless-strategy-expectations/v1"},
+    "requestSha256": {"$ref": "#/$defs/sha256"},
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["caseId", "traceSha256"],
+        "properties": {
+          "caseId": {"$ref": "#/$defs/id"},
+          "traceSha256": {"$ref": "#/$defs/sha256"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

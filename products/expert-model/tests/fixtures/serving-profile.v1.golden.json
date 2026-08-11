@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "daxalgo.hyperion.serving-profile/v1",
+  "profileId": "daxalgo-expert-qwen25-7b-v1",
+  "candidateCatalogSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "candidateId": "qwen2.5-coder-7b-instruct",
+  "baseModel": {
+    "modelId": "Qwen/Qwen2.5-Coder-7B-Instruct",
+    "revision": "c03e6d358207e414f1eca0bb1891e29f1db0e242"
+  },
+  "trainingArtifact": {
+    "mode": "unpromoted-candidate",
+    "trainingRunManifestSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "artifactSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "artifactTreeSha256": "4444444444444444444444444444444444444444444444444444444444444444"
+  },
+  "chatTemplateSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "runtime": {
+    "engine": "vllm",
+    "engineVersion": "0.10.0",
+    "containerImageDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "quantization": "bitsandbytes-nf4",
+    "computeDtype": "bfloat16",
+    "maxModelLength": 8192,
+    "tensorParallelSize": 1,
+    "gpuProfile": "l40s-48gb"
+  },
+  "protocol": "openai-compatible"
+}
