@@ -1,6 +1,6 @@
 # Hyperion
 
-Hyperion is a private, evidence-gated LLM coordinator and expert-model portfolio for strategy
+Hyperion is an evidence-gated LLM coordinator and expert-model portfolio for strategy
 authoring. It combines a durable multi-role coordinator, provenance- and review-aware corpus
 tooling, hosted and downloadable teacher integration, small-model distillation/training and
 evaluation infrastructure, signed promotion/readiness contracts, a constrained C# verifier, and a
@@ -10,6 +10,15 @@ This repository was extracted from DaxAlgo Terminal Pro at commit
 `003685a92e7ddba9e4149d3bb545f4ce82446f3e`. Its shared Core/SDK dependency is pinned as the
 `public/` submodule at `ae19c5eb7ab7b3c6d6e1a5647fc127a838e6dd05`. The original checkout is
 not a development target for Hyperion after this extraction.
+
+![Hyperion authoring a strategy: describe, plan and write code, then review before it joins the catalog](docs/media/hyperion.gif)
+
+*Describe an idea, pick a provider, watch the agent plan and write the code, then review the compiled files before
+anything joins the catalog.*
+
+![HTT-1.5B computational graph](docs/media/htt-architecture.png)
+
+*HTT-1.5B-r0 computational graph from the [research paper](products/htt/research/hyperion-terminal-transformer-research-paper.pdf).*
 
 ## Current evidence status
 
