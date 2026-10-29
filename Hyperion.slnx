@@ -1,9 +1,10 @@
 <Solution>
   <Folder Name="/Hyperion/">
+    <Project Path="src/windows/AI/Hyperion.FreeStrategyWorkflow/Hyperion.FreeStrategyWorkflow.csproj" />
     <Project Path="src/windows/AI/TradingTerminal.Ai.Coordinator.Contracts/TradingTerminal.Ai.Coordinator.Contracts.csproj" />
     <Project Path="src/windows/AI/TradingTerminal.Ai.Coordinator/TradingTerminal.Ai.Coordinator.csproj" />
     <Project Path="src/windows/AI/TradingTerminal.Ai.Coordinator.Client/TradingTerminal.Ai.Coordinator.Client.csproj" />
-    <Project Path="src/windows/Tools/DaxAlgo.Coordinator.Cli/DaxAlgo.Coordinator.Cli.csproj" />
+    <Project Path="src/windows/Tools/Hyperion.Cli/Hyperion.Cli.csproj" />
   </Folder>
   <Folder Name="/Verifier dependencies/">
     <Project Path="src/windows/AI/DaxAlgo.Daxq.Contracts/DaxAlgo.Daxq.Contracts.csproj" />

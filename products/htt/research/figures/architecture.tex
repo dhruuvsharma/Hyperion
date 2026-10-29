@@ -1,0 +1,26 @@
+\begin{tikzpicture}[node distance=5mm and 8mm]
+  \node[httbox, minimum width=63mm] (tokens) {Domain tokenizer and immutable request identities};
+  \node[httbox, below=of tokens, minimum width=45mm] (embed) {Tied embedding, width $d=2{,}048$};
+  \node[draw=httblue, rounded corners, below=6mm of embed, minimum width=88mm,
+        minimum height=46mm, fill=white, label={[font=\bfseries\small]above:32 decoder blocks}] (stack) {};
+  \node[subbox, below=9mm of embed, minimum width=64mm] (attn) {Pre-RMSNorm $\rightarrow$ QK-Norm $\rightarrow$ RoPE $\rightarrow$ GQA};
+  \node[subbox, below=of attn, minimum width=64mm] (ffn) {Residual $\rightarrow$ pre-RMSNorm $\rightarrow$ SwiGLU $\rightarrow$ residual};
+  \node[subbox, below=of ffn, minimum width=64mm] (schedule) {Three local layers, then one global layer; repeated eight times};
+  \node[httbox, left=9mm of ffn, minimum width=27mm] (local) {Local window\\$W=4{,}096$\\24 layers};
+  \node[httbox, right=9mm of ffn, minimum width=27mm] (global) {Global context\\$N\le 32{,}768$\\8 layers};
+  \node[warnbox, below=8mm of stack, minimum width=70mm] (lanes) {Top 12 blocks: deterministic rank-64 task lane};
+  \node[gatebox, below left=6mm and 10mm of lanes] (strategy) {Strategy lane};
+  \node[httbox, below right=6mm and 10mm of lanes] (visual) {Visualizer lane};
+  \node[httbox, below=13mm of lanes, minimum width=68mm] (logits) {Final RMSNorm, tied logits, and grammar mask};
+  \draw[httarrow] (tokens) -- (embed);
+  \draw[httarrow] (embed) -- (attn);
+  \draw[httarrow] (attn) -- (ffn);
+  \draw[httarrow] (ffn) -- (schedule);
+  \draw[httarrow] (local) -- (ffn);
+  \draw[httarrow] (global) -- (ffn);
+  \draw[httarrow] (stack) -- (lanes);
+  \draw[gatearrow] (lanes) -- (strategy);
+  \draw[httarrow] (lanes) -- (visual);
+  \draw[httarrow] (strategy) -- (logits);
+  \draw[httarrow] (visual) -- (logits);
+\end{tikzpicture}

@@ -357,6 +357,61 @@ public sealed class DatasetAndProviderTests
     }
 
     [Fact]
+    public void OpenAi_compatible_provider_rejects_a_mislabeled_protocol()
+    {
+        using var http = new HttpClient(new CapturingHandler());
+        var descriptor = CoordinatorTestData.Descriptor(
+            providerId: "captured",
+            modelId: "model-v1",
+            protocol: LlmProviderProtocols.AnthropicMessages,
+            endpoint: "https://provider.example/v1/");
+
+        Action construct = () => _ = new OpenAiCompatibleLlmProvider(http, descriptor, "test-key");
+
+        construct.Should().Throw<ArgumentException>()
+            .WithMessage("*openai-compatible*");
+    }
+
+    [Fact]
+    public async Task OpenAi_compatible_provider_rejects_a_success_payload_that_echoes_its_key()
+    {
+        const string secret = "openai-echo-test-key";
+        var responseBody = JsonSerializer.Serialize(new
+        {
+            id = "response-echo",
+            choices = new[]
+            {
+                new
+                {
+                    message = new { role = "assistant", content = secret },
+                    finish_reason = "stop",
+                },
+            },
+            usage = new { prompt_tokens = 2, completion_tokens = 1 },
+        });
+        var handler = new CapturingHandler(responseBody);
+        using var http = new HttpClient(handler);
+        var descriptor = CoordinatorTestData.Descriptor(
+            providerId: "captured",
+            modelId: "model-v1",
+            protocol: LlmProviderProtocols.OpenAiCompatible,
+            endpoint: "https://provider.example/v1/");
+        var provider = new OpenAiCompatibleLlmProvider(http, descriptor, secret);
+
+        var result = await provider.CompleteAsync(new LlmRequest(
+            "credential-echo",
+            CoordinatorRole.Planner,
+            "System boundary.",
+            [new LlmMessage("user", "Analyze supplied evidence.")],
+            MaxOutputTokens: 321,
+            MaxResponseBytes: 16_384));
+
+        result.IsSuccess.Should().BeFalse();
+        result.Failure!.Kind.Should().Be(LlmFailureKinds.InvalidResponse);
+        result.Failure.SafeMessage.Should().NotContain(secret);
+    }
+
+    [Fact]
     public void Provider_endpoints_require_https_except_for_loopback_and_reject_embedded_credentials()
     {
         LlmProviderValidation.TryValidateEndpoint("http://provider.example/v1", out _, out var remoteError)

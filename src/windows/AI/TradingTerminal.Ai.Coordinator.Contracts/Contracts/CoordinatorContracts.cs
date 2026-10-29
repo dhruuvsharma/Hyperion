@@ -9,6 +9,8 @@ public static class CoordinatorVersions
     public const string ArtifactSchema = "coordinator-role-output/v1";
     public const string StrategyPolicy = "strategy-authoring-inert/v1";
     public const string StrategyWorkflow = "fixed-strategy-authoring/v1";
+    public const string FreeStrategyPolicy = "free-strategy-authoring-inert/v1";
+    public const string FreeStrategyWorkflow = "fixed-free-strategy-authoring/v1";
     public const string StrategyArtifactSchema = "coordinator-strategy-source/v1";
     public const string StrategyArtifactKind = "StrategySource";
     public const string StrategyDeliveryState = "inert-source/v1";
@@ -19,6 +21,16 @@ public static class CoordinatorVersions
         "bb79da228ed798981334970908f4cdb8739edb1e728f67b21156adbe101cdb0b";
     public const string DatasetSchema = "coordinator-dataset/v1";
     public const string ExpertModelDatasetSchema = "expert-model-dataset/v1";
+}
+
+public static class LlmProviderProtocols
+{
+    public const string Mock = "mock";
+    public const string OpenAiCompatible = "openai-compatible";
+    public const string AnthropicMessages = "anthropic-messages/v1";
+    public const string GoogleGemini = "google-gemini-generate-content/v1";
+    public const string Replay = "replay";
+    public const string ExternalAdapter = "external-adapter/v1";
 }
 
 public enum CoordinatorRunPurpose

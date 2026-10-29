@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>Hyperion.FreeStrategyWorkflow</AssemblyName>
+    <RootNamespace>Hyperion.FreeStrategyWorkflow</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TradingTerminal.Ai.Coordinator.Contracts\TradingTerminal.Ai.Coordinator.Contracts.csproj" />
+    <ProjectReference Include="..\TradingTerminal.Ai.Coordinator\TradingTerminal.Ai.Coordinator.csproj" />
+    <InternalsVisibleTo Include="TradingTerminal.Tests.Pro.Headless" />
+  </ItemGroup>
+
+</Project>

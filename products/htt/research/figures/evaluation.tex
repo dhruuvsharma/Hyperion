@@ -1,0 +1,14 @@
+\begin{tikzpicture}[node distance=9mm and 14mm]
+  \node[httbox] (model) {Frozen HTT artifact};
+  \node[warnbox, below=of model] (cases) {Independently held sealed cases};
+  \node[gatebox, right=of model, yshift=-9mm, minimum width=37mm] (harness) {Deterministic harness};
+  \node[httbox, below=of harness, minimum width=37mm] (verifier) {Calibrated verifier};
+  \node[httbox, right=of harness, yshift=-9mm] (ledger) {Evidence ledger};
+  \node[warnbox, below=of ledger] (decision) {Promotion decision};
+  \draw[httarrow] (model) -- (harness);
+  \draw[warnarrow] (cases) -- (harness);
+  \draw[gatearrow] (harness) -- (verifier);
+  \draw[httarrow] (harness) -- (ledger);
+  \draw[httarrow] (verifier) -- (ledger);
+  \draw[warnarrow] (ledger) -- (decision);
+\end{tikzpicture}

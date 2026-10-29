@@ -1,0 +1,16 @@
+\begin{tikzpicture}[node distance=7mm and 11mm]
+  \node[httbox, minimum width=48mm] (request) {Request, diagnostics, and current artifact};
+  \node[warnbox, below=of request, minimum width=48mm] (need) {Retrieval-need classifier};
+  \node[gatebox, below left=of need] (none) {No retrieval};
+  \node[httbox, below right=of need] (filter) {Authorization and version filter};
+  \node[httbox, below=of filter] (rank) {Sparse+dense scoring and reranking};
+  \node[httbox, below=of rank] (select) {Budgeted diversity-aware selection};
+  \node[httbox, below=20mm of need, minimum width=52mm] (context) {Bounded evidence context with IDs, hashes, rights, and versions};
+  \draw[httarrow] (request) -- (need);
+  \draw[gatearrow] (need) -- node[above left, font=\scriptsize] {not needed} (none);
+  \draw[httarrow] (need) -- node[above right, font=\scriptsize] {needed} (filter);
+  \draw[httarrow] (filter) -- (rank);
+  \draw[httarrow] (rank) -- (select);
+  \draw[gatearrow] (none) -- (context);
+  \draw[httarrow] (select) -- (context);
+\end{tikzpicture}

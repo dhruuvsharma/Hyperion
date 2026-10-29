@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "hyperion-free-strategy-workflow/v1",
+  "displayName": "Hyperion Free Strategy Workflow",
+  "hyperionWorkflowCharge": "none",
+  "externalProviderCharges": "user-owned",
+  "purpose": "StrategyAuthoring",
+  "policyVersion": "free-strategy-authoring-inert/v1",
+  "workflowVersion": "fixed-free-strategy-authoring/v1",
+  "promptCatalogSha256": "bb79da228ed798981334970908f4cdb8739edb1e728f67b21156adbe101cdb0b",
+  "roles": [
+    "Planner",
+    "EvidenceAnalyst",
+    "Critic",
+    "Synthesizer",
+    "RiskJudge"
+  ],
+  "providerProtocols": [
+    "mock",
+    "openai-compatible",
+    "anthropic-messages/v1",
+    "google-gemini-generate-content/v1",
+    "external-adapter/v1"
+  ],
+  "gauntlet": {
+    "schemaVersion": "hyperion-free-strategy-gauntlet-report/v1",
+    "scope": "process-integrity-only",
+    "compilationVerification": "not-run-by-free-workflow",
+    "functionalVerification": "not-run-by-free-workflow",
+    "semanticCorrectnessGuaranteed": false
+  },
+  "repair": {
+    "schemaVersion": "hyperion-free-strategy-repair-lineage/v1",
+    "maximumRounds": 2,
+    "maximumInitialSources": 58,
+    "createsFreshRun": true,
+    "requiresFreshStartApproval": true,
+    "requiresFreshReleaseApproval": true
+  },
+  "output": {
+    "schemaVersion": "coordinator-strategy-source/v1",
+    "kind": "StrategySource",
+    "deliveryState": "inert-source/v1",
+    "compilerProfile": "terminal-authored-strategy/v1",
+    "requiresHumanRelease": true,
+    "requiresTerminalCompileConsent": true,
+    "installEligible": false
+  },
+  "modelTools": [],
+  "remoteProviderDataEgressRequiresExplicitConsent": true,
+  "providerSecretValuesInRun": false,
+  "hostedCreditsUsed": false
+}

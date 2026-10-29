@@ -1,7 +1,11 @@
+using System.Net;
+using System.Text;
 using System.Text.Json;
 using DaxAlgo.Coordinator.Cli;
 using FluentAssertions;
 using TradingTerminal.Ai.Coordinator.Client;
+using TradingTerminal.Ai.Coordinator.Contracts;
+using TradingTerminal.Ai.Coordinator.Models;
 using TradingTerminal.Ai.Coordinator.Orchestration;
 using TradingTerminal.Ai.Coordinator.Serialization;
 
@@ -210,7 +214,7 @@ public sealed class CliAndDependencyBoundaryTests
     }
 
     [Fact]
-    public async Task Help_describes_hosted_jobs_and_removes_local_provider_commands()
+    public async Task Help_separates_hosted_jobs_from_the_local_free_workflow()
     {
         using var output = new StringWriter();
         using var error = new StringWriter();
@@ -218,7 +222,7 @@ public sealed class CliAndDependencyBoundaryTests
         var exitCode = await new CliApplication(output, error).RunAsync([], CancellationToken.None);
 
         exitCode.Should().Be(0);
-        output.ToString().Should().Contain("hosted Hyperion coordinator");
+        output.ToString().Should().Contain("hosted Hyperion operator and local free-workflow CLI");
         output.ToString().Should().Contain("credits --config");
         output.ToString().Should().Contain("--purpose research|strategy")
             .And.Contain("exact signed hosted capability")
@@ -231,6 +235,348 @@ public sealed class CliAndDependencyBoundaryTests
         output.ToString().Should().NotContain("resume --config");
         output.ToString().Should().NotContain("--actor");
         output.ToString().ToLowerInvariant().Should().NotContain("provider key");
+        output.ToString().Should().Contain("workflow --help")
+            .And.Contain("separate config/workspace")
+            .And.Contain("consumes no hosted credits");
+    }
+
+    [Fact]
+    public async Task Workflow_init_writes_a_separate_config_without_a_provider_secret()
+    {
+        using var workspace = new TestWorkspace();
+        var configPath = workspace.PathFor("free-workflow.json");
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+
+        var exitCode = await new CliApplication(output, error).RunAsync(
+            [
+                "workflow", "init",
+                "--config", configPath,
+                "--provider", "ollama",
+                "--model", "qwen-code",
+                "--endpoint", "http://127.0.0.1:11434/v1"
+            ],
+            CancellationToken.None);
+
+        exitCode.Should().Be(0, error.ToString());
+        var config = await FreeStrategyWorkflowCliConfigLoader.LoadAsync(
+            configPath,
+            CancellationToken.None);
+        config.SchemaVersion.Should().Be(FreeStrategyWorkflowCliConfig.CurrentSchemaVersion);
+        config.Provider.ProviderId.Should().Be("ollama");
+        config.Provider.CredentialEnvironmentVariable.Should().BeNull();
+        var raw = await File.ReadAllTextAsync(configPath);
+        raw.ToLowerInvariant().Should().NotContain("apikey").And.NotContain("secret");
+        raw.Should().NotContain(CoordinatorCliConfig.CurrentSchemaVersion);
+    }
+
+    [Fact]
+    public async Task Workflow_remote_config_requires_explicit_data_egress_consent()
+    {
+        using var workspace = new TestWorkspace();
+        var configPath = workspace.PathFor("remote-workflow.json");
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+
+        var exitCode = await new CliApplication(output, error).RunAsync(
+            [
+                "workflow", "init",
+                "--config", configPath,
+                "--profile", "custom-openai-compatible",
+                "--provider", "remote",
+                "--model", "remote-model",
+                "--endpoint", "https://provider.example/v1",
+                "--input-price", "1.25",
+                "--output-price", "3.5",
+                "--allow-custom-provider"
+            ],
+            CancellationToken.None);
+
+        exitCode.Should().Be(1);
+        error.ToString().Should().Contain("allowRemoteProviderDataEgress");
+        File.Exists(configPath).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("openai", "openai-compatible", "https://api.openai.com/v1", "DAXALGO_LLM_OPENAI_API_KEY")]
+    [InlineData("anthropic", "anthropic-messages/v1", "https://api.anthropic.com/v1", "DAXALGO_LLM_ANTHROPIC_API_KEY")]
+    [InlineData("gemini", "google-gemini-generate-content/v1", "https://generativelanguage.googleapis.com/v1beta", "DAXALGO_LLM_GEMINI_API_KEY")]
+    public async Task Workflow_builtin_profiles_pin_protocol_origin_and_secret_slot(
+        string profile,
+        string protocol,
+        string endpoint,
+        string credentialVariable)
+    {
+        using var workspace = new TestWorkspace();
+        var configPath = workspace.PathFor($"{profile}.json");
+
+        var init = await RunCliAsync([
+            "workflow", "init",
+            "--config", configPath,
+            "--profile", profile,
+            "--model", "provider-model",
+            "--input-price", "1",
+            "--output-price", "2",
+            "--allow-provider-egress"
+        ]);
+
+        init.ExitCode.Should().Be(0, init.Error);
+        var config = await FreeStrategyWorkflowCliConfigLoader.LoadAsync(
+            configPath,
+            CancellationToken.None);
+        config.Provider.ProfileId.Should().Be(profile);
+        config.Provider.Protocol.Should().Be(protocol);
+        config.Provider.Endpoint.Should().Be(endpoint);
+        config.Provider.CredentialEnvironmentVariable.Should().Be(credentialVariable);
+        (await File.ReadAllTextAsync(configPath)).Should().NotContain("provider-model-secret");
+    }
+
+    [Fact]
+    public async Task Workflow_openai_chat_profile_rejects_o_series_models()
+    {
+        using var workspace = new TestWorkspace();
+        var configPath = workspace.PathFor("openai-o3.json");
+
+        var init = await RunCliAsync([
+            "workflow", "init",
+            "--config", configPath,
+            "--profile", "openai",
+            "--model", "o3",
+            "--input-price", "1",
+            "--output-price", "2",
+            "--allow-provider-egress"
+        ]);
+
+        init.ExitCode.Should().Be(1);
+        init.Error.Should().Contain("not compatible with o-series models");
+        File.Exists(configPath).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Workflow_custom_profile_binds_a_distinct_secret_slot_to_the_exact_origin()
+    {
+        using var workspace = new TestWorkspace();
+        var configPath = workspace.PathFor("custom.json");
+        var init = await RunCliAsync([
+            "workflow", "init",
+            "--config", configPath,
+            "--profile", "custom-openai-compatible",
+            "--provider", "custom-provider",
+            "--model", "custom-model",
+            "--endpoint", "https://models.example/v1",
+            "--input-price", "1",
+            "--output-price", "2",
+            "--allow-provider-egress",
+            "--allow-custom-provider"
+        ]);
+
+        init.ExitCode.Should().Be(0, init.Error);
+        var config = await FreeStrategyWorkflowCliConfigLoader.LoadAsync(
+            configPath,
+            CancellationToken.None);
+        var originalVariable = config.Provider.CredentialEnvironmentVariable;
+        originalVariable.Should().StartWith("DAXALGO_LLM_CUSTOM_");
+        originalVariable.Should().HaveLength("DAXALGO_LLM_CUSTOM_".Length + 64);
+        var redirected = config with
+        {
+            Provider = config.Provider with { Endpoint = "https://attacker.example/v1" }
+        };
+
+        Action validateRedirect = () => FreeStrategyWorkflowCliConfigLoader.Validate(redirected);
+
+        validateRedirect.Should().Throw<InvalidDataException>()
+            .WithMessage("*origin-bound*");
+    }
+
+    [Fact]
+    public async Task Workflow_cli_completes_a_fake_remote_provider_lifecycle_without_persisting_its_key()
+    {
+        using var workspace = new TestWorkspace();
+        var configPath = workspace.PathFor("provider-workflow.json");
+        var statePath = workspace.PathFor("provider-state");
+        var briefPath = workspace.PathFor("provider-brief.md");
+        await File.WriteAllTextAsync(briefPath, "Create a bounded inert provider-backed strategy.");
+        var init = await RunCliAsync([
+            "workflow", "init",
+            "--config", configPath,
+            "--profile", "custom-openai-compatible",
+            "--provider", "fake-provider",
+            "--model", "fake-model",
+            "--endpoint", "https://workflow-provider.example/v1",
+            "--input-price", "1",
+            "--output-price", "2",
+            "--allow-provider-egress",
+            "--allow-custom-provider"
+        ]);
+        init.ExitCode.Should().Be(0, init.Error);
+        var config = await FreeStrategyWorkflowCliConfigLoader.LoadAsync(
+            configPath,
+            CancellationToken.None);
+        var variable = config.Provider.CredentialEnvironmentVariable!;
+        const string secret = "provider-lifecycle-test-key";
+        Environment.SetEnvironmentVariable(variable, secret);
+        try
+        {
+            var create = await RunCliAsync([
+                "workflow", "create",
+                "--config", configPath,
+                "--workspace", statePath,
+                "--brief", briefPath,
+                "--owner", "provider-user"
+            ]);
+            create.ExitCode.Should().Be(0, create.Error);
+            using var created = JsonDocument.Parse(create.Output);
+            var runId = created.RootElement.GetProperty("runId").GetGuid();
+            var specification = created.RootElement.GetProperty("specificationSha256").GetString()!;
+            var handler = new WorkflowOpenAiHandler(secret);
+            using var output = new StringWriter();
+            var cli = new FreeStrategyWorkflowCli(output, () => handler);
+
+            var exitCode = await cli.RunAsync(
+                CliArguments.Parse([
+                    "workflow", "start",
+                    "--config", configPath,
+                    "--workspace", statePath,
+                    "--run", runId.ToString(),
+                    "--spec", specification,
+                    "--actor", "provider-user"
+                ]),
+                CancellationToken.None);
+
+            exitCode.Should().Be(0);
+            handler.RequestCount.Should().Be(5);
+            handler.RequestBodies.Should().OnlyContain(body => !body.Contains(secret, StringComparison.Ordinal));
+            output.ToString().Should().NotContain(secret);
+            using var started = JsonDocument.Parse(output.ToString());
+            started.RootElement.GetProperty("status").GetString().Should().Be("AwaitingReleaseApproval");
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            foreach (var file in Directory.EnumerateFiles(statePath, "*", SearchOption.AllDirectories)
+                         .Append(configPath))
+            {
+                Encoding.UTF8.GetString(await File.ReadAllBytesAsync(file)).Should().NotContain(secret);
+            }
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(variable, null);
+        }
+    }
+
+    [Fact]
+    public async Task Workflow_cli_runs_the_complete_mock_approval_lifecycle()
+    {
+        using var workspace = new TestWorkspace();
+        var configPath = workspace.PathFor("mock-workflow.json");
+        var statePath = workspace.PathFor("workflow-state");
+        var briefPath = workspace.PathFor("brief.md");
+        await File.WriteAllTextAsync(briefPath, "Create a deterministic inert example strategy.");
+
+        var init = await RunCliAsync([
+            "workflow", "init",
+            "--config", configPath,
+            "--protocol", "mock"
+        ]);
+        init.ExitCode.Should().Be(0, init.Error);
+
+        var create = await RunCliAsync([
+            "workflow", "create",
+            "--config", configPath,
+            "--workspace", statePath,
+            "--brief", briefPath,
+            "--owner", "cli-user"
+        ]);
+        create.ExitCode.Should().Be(0, create.Error);
+        using var created = JsonDocument.Parse(create.Output);
+        var runId = created.RootElement.GetProperty("runId").GetGuid();
+        var spec = created.RootElement.GetProperty("specificationSha256").GetString()!;
+
+        var start = await RunCliAsync([
+            "workflow", "start",
+            "--config", configPath,
+            "--workspace", statePath,
+            "--run", runId.ToString(),
+            "--spec", spec,
+            "--actor", "cli-user"
+        ]);
+        start.ExitCode.Should().Be(0, start.Error);
+        using var started = JsonDocument.Parse(start.Output);
+        started.RootElement.GetProperty("status").GetString().Should().Be("AwaitingReleaseApproval");
+        var artifact = started.RootElement.GetProperty("finalArtifactSha256").GetString()!;
+        started.RootElement.GetProperty("installEligible").GetBoolean().Should().BeFalse();
+
+        var gauntlet = await RunCliAsync([
+            "workflow", "gauntlet",
+            "--config", configPath,
+            "--workspace", statePath,
+            "--run", runId.ToString()
+        ]);
+        gauntlet.ExitCode.Should().Be(0, gauntlet.Error);
+        using var inspected = JsonDocument.Parse(gauntlet.Output);
+        inspected.RootElement.GetProperty("processIntegrityPassed").GetBoolean().Should().BeTrue();
+        inspected.RootElement.GetProperty("semanticCorrectnessGuaranteed").GetBoolean().Should().BeFalse();
+        inspected.RootElement.GetProperty("compilationVerification").GetString()
+            .Should().Be("not-run-by-free-workflow");
+
+        var show = await RunCliAsync([
+            "workflow", "show",
+            "--config", configPath,
+            "--workspace", statePath,
+            "--run", runId.ToString()
+        ]);
+        show.ExitCode.Should().Be(0, show.Error);
+        using var shown = JsonDocument.Parse(show.Output);
+        shown.RootElement.GetProperty("schemaVersion").GetString()
+            .Should().Be(CoordinatorVersions.StrategyArtifactSchema);
+        shown.RootElement.GetProperty("requiresTerminalCompileConsent").GetBoolean().Should().BeTrue();
+
+        var release = await RunCliAsync([
+            "workflow", "release",
+            "--config", configPath,
+            "--workspace", statePath,
+            "--run", runId.ToString(),
+            "--artifact", artifact,
+            "--actor", "cli-user"
+        ]);
+        release.ExitCode.Should().Be(0, release.Error);
+        using var released = JsonDocument.Parse(release.Output);
+        released.RootElement.GetProperty("status").GetString().Should().Be("Completed");
+
+        var repairRequestPath = workspace.PathFor("repair-request.md");
+        var diagnosticsPath = workspace.PathFor("compiler-diagnostics.txt");
+        await File.WriteAllTextAsync(repairRequestPath, "Repair the exact compiler error only.");
+        await File.WriteAllTextAsync(diagnosticsPath, "CS0103: Unknown symbol.");
+        var revise = await RunCliAsync([
+            "workflow", "revise",
+            "--config", configPath,
+            "--workspace", statePath,
+            "--run", runId.ToString(),
+            "--request", repairRequestPath,
+            "--diagnostics", diagnosticsPath,
+            "--owner", "cli-user"
+        ]);
+        revise.ExitCode.Should().Be(0, revise.Error);
+        using var revised = JsonDocument.Parse(revise.Output);
+        revised.RootElement.GetProperty("status").GetString().Should().Be("AwaitingStartApproval");
+        revised.RootElement.GetProperty("runId").GetGuid().Should().NotBe(runId);
+    }
+
+    [Fact]
+    public async Task Workflow_help_states_the_local_cost_and_authority_boundaries()
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+
+        var exitCode = await new CliApplication(output, error).RunAsync(
+            ["workflow", "--help"],
+            CancellationToken.None);
+
+        exitCode.Should().Be(0, error.ToString());
+        output.ToString().Should().Contain("free local/BYOK")
+            .And.Contain("consumes no hosted Hyperion credits")
+            .And.Contain("Third-party provider charges remain external")
+            .And.Contain("Terminal compile consent")
+            .And.Contain("does not compile, test, backtest, or guarantee semantic correctness")
+            .And.Contain("at most two repair rounds");
     }
 
     [Fact]
@@ -295,4 +641,62 @@ public sealed class CliAndDependencyBoundaryTests
             DevelopmentEmail = null,
         }
     };
+
+    private static async Task<(int ExitCode, string Output, string Error)> RunCliAsync(string[] args)
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        var exitCode = await new CliApplication(output, error).RunAsync(args, CancellationToken.None);
+        return (exitCode, output.ToString(), error.ToString());
+    }
+
+    private sealed class WorkflowOpenAiHandler(string expectedSecret) : HttpMessageHandler
+    {
+        private readonly DeterministicMockLlmProvider _mock = new();
+
+        public int RequestCount { get; private set; }
+
+        public List<string> RequestBodies { get; } = [];
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            request.Headers.Authorization?.ToString().Should().Be($"Bearer {expectedSecret}");
+            var bodyText = await request.Content!.ReadAsStringAsync(cancellationToken);
+            RequestBodies.Add(bodyText);
+            RequestCount++;
+            using var body = JsonDocument.Parse(bodyText);
+            var messages = body.RootElement.GetProperty("messages");
+            var systemPrompt = messages[0].GetProperty("content").GetString()!;
+            var userPrompt = messages[messages.GetArrayLength() - 1].GetProperty("content").GetString()!;
+            var role = Enum.GetValues<CoordinatorRole>().Single(candidate =>
+                userPrompt.Contains($"CURRENT ROLE: {candidate}", StringComparison.Ordinal));
+            var completion = await _mock.CompleteAsync(new LlmRequest(
+                $"provider-{RequestCount}",
+                role,
+                systemPrompt,
+                [new LlmMessage("user", userPrompt)],
+                body.RootElement.GetProperty("max_tokens").GetInt32(),
+                1_000_000));
+            completion.IsSuccess.Should().BeTrue();
+            var response = JsonSerializer.Serialize(new
+            {
+                id = $"provider-response-{RequestCount}",
+                choices = new[]
+                {
+                    new
+                    {
+                        message = new { role = "assistant", content = completion.Completion!.Text },
+                        finish_reason = "stop"
+                    }
+                },
+                usage = new { prompt_tokens = 10, completion_tokens = 5 }
+            });
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(response, Encoding.UTF8, "application/json")
+            };
+        }
+    }
 }

@@ -11,8 +11,8 @@ namespace DaxAlgo.Coordinator.Cli;
 
 public sealed class CliApplication(TextWriter output, TextWriter error)
 {
-    private const int MaxBriefFileBytes = CoordinatorValidation.MaxObjectiveCharacters * 4 + 4;
-    private const int MaxSourceFileBytes = CoordinatorValidation.MaxSourceContentCharacters * 4 + 4;
+    internal const int MaxBriefFileBytes = CoordinatorValidation.MaxObjectiveCharacters * 4 + 4;
+    internal const int MaxSourceFileBytes = CoordinatorValidation.MaxSourceContentCharacters * 4 + 4;
     private static readonly UTF8Encoding StrictUtf8 = new(false, true);
     private static readonly JsonSerializerOptions CompactJson = new(CoordinatorJson.Options)
     {
@@ -22,7 +22,20 @@ public sealed class CliApplication(TextWriter output, TextWriter error)
     public async Task<int> RunAsync(IReadOnlyList<string> args, CancellationToken cancellationToken)
     {
         var parsed = CliArguments.Parse(args);
-        if (parsed.Positionals.Count == 0 || parsed.Has("help"))
+        if (parsed.Positionals.Count == 0)
+        {
+            await PrintHelpAsync().ConfigureAwait(false);
+            return 0;
+        }
+        if (parsed.Positionals[0] == "workflow")
+        {
+            if (parsed.Has("help") || parsed.Positionals.Count == 1)
+            {
+                await FreeStrategyWorkflowCli.PrintHelpAsync(output).ConfigureAwait(false);
+                return 0;
+            }
+        }
+        else if (parsed.Has("help"))
         {
             await PrintHelpAsync().ConfigureAwait(false);
             return 0;
@@ -32,6 +45,8 @@ public sealed class CliApplication(TextWriter output, TextWriter error)
         {
             return parsed.Positionals[0] switch
             {
+                "workflow" => await new FreeStrategyWorkflowCli(output)
+                    .RunAsync(parsed, cancellationToken).ConfigureAwait(false),
                 "init" => await InitAsync(parsed, cancellationToken).ConfigureAwait(false),
                 "credits" => await CreditsAsync(parsed, cancellationToken).ConfigureAwait(false),
                 "create" => await CreateAsync(parsed, startImmediately: false, cancellationToken).ConfigureAwait(false),
@@ -541,12 +556,12 @@ public sealed class CliApplication(TextWriter output, TextWriter error)
         CancellationToken cancellationToken) =>
         CoordinatorRuntime.CreateAsync(args.Required("config"), cancellationToken);
 
-    private static Guid ParseRunId(CliArguments args) =>
+    internal static Guid ParseRunId(CliArguments args) =>
         Guid.TryParse(args.Required("run"), out var runId) && runId != Guid.Empty
             ? runId
             : throw new ArgumentException("--run must be a non-empty GUID.");
 
-    private static async Task<IReadOnlyList<CoordinatorContextSource>> ReadSourcesAsync(
+    internal static async Task<IReadOnlyList<CoordinatorContextSource>> ReadSourcesAsync(
         IReadOnlyList<string> values,
         CancellationToken cancellationToken)
     {
@@ -606,7 +621,7 @@ public sealed class CliApplication(TextWriter output, TextWriter error)
         return evidence;
     }
 
-    private static async Task<string> ReadBoundedUtf8TextAsync(
+    internal static async Task<string> ReadBoundedUtf8TextAsync(
         string path,
         int maxBytes,
         int maxCharacters,
@@ -831,7 +846,7 @@ public sealed class CliApplication(TextWriter output, TextWriter error)
     private async Task PrintHelpAsync()
     {
         await output.WriteLineAsync("""
-            hyperion - authenticated client for the hosted Hyperion coordinator
+            hyperion - hosted Hyperion operator and local free-workflow CLI
 
               init [--config PATH] [--server URL] [--auth development|bearer]
                    [--subject ID] [--email ADDRESS] [--token-env DAXALGO_PLATFORM_ACCESS_TOKEN]
@@ -870,6 +885,7 @@ public sealed class CliApplication(TextWriter output, TextWriter error)
                   [--teacher-lineage-admission FILE --teacher-lineage-public-key FILE
                    --teacher-lineage-public-key-spki-sha256 SHA256 --teacher-lineage-audience ID
                    --teacher-lineage-key-id ID --teacher-lineage-signer-role ID] [--local-only]
+              workflow --help
 
             The platform owns identity, provider credentials, model selection, budgets, credits,
             persistence, and execution. `run` creates and queues a server job; poll `status` for output.
@@ -878,6 +894,9 @@ public sealed class CliApplication(TextWriter output, TextWriter error)
             directly by this client.
             Development authentication is accepted only for a loopback server. Production uses a
             short-lived platform access token supplied through the configured environment variable.
+            The local `workflow` surface uses a separate config/workspace, stores no provider secret,
+            consumes no hosted credits, and produces only inert source requiring human release and
+            Terminal compile consent.
             """).ConfigureAwait(false);
     }
 }

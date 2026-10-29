@@ -44,23 +44,24 @@ public static class CoordinatorValidation
         {
             throw new CoordinatorValidationException("Provider token prices must be between 0 and 1,000,000 USD per million tokens.");
         }
-        if (spec.Provider.Protocol == "replay" &&
+        if (spec.Provider.Protocol == LlmProviderProtocols.Replay &&
             (spec.Provider.ReplaySha256 is not { Length: 64 } replaySha256 || !replaySha256.All(Uri.IsHexDigit)))
         {
             throw new CoordinatorValidationException("Replay runs require a valid replay-file SHA-256 binding.");
         }
+        var isLiveHttpProvider = IsLiveHttpProvider(spec.Provider.Protocol);
         Uri? liveEndpoint = null;
-        if (spec.Provider.Protocol == "openai-compatible" &&
+        if (isLiveHttpProvider &&
             !LlmProviderValidation.TryValidateEndpoint(spec.Provider.Endpoint, out liveEndpoint, out var endpointError))
         {
             throw new CoordinatorValidationException(endpointError ?? "Live provider endpoint is invalid.");
         }
-        if (spec.Provider.Protocol == "openai-compatible" && liveEndpoint is { IsLoopback: false } &&
+        if (isLiveHttpProvider && liveEndpoint is { IsLoopback: false } &&
             (spec.Provider.InputUsdPerMillionTokens <= 0m || spec.Provider.OutputUsdPerMillionTokens <= 0m))
         {
             throw new CoordinatorValidationException("Remote live runs require positive input and output token prices.");
         }
-        if (spec.Provider.Protocol == "openai-compatible" && liveEndpoint is { IsLoopback: false } &&
+        if (isLiveHttpProvider && liveEndpoint is { IsLoopback: false } &&
             !IsDedicatedCredentialEnvironmentVariable(spec.Provider.CredentialEnvironmentVariable))
         {
             throw new CoordinatorValidationException(
@@ -71,14 +72,22 @@ public static class CoordinatorValidation
         {
             throw new CoordinatorValidationException("Credential environment-variable binding is invalid.");
         }
-        if (spec.Provider.Protocol != "openai-compatible" &&
+        if (!isLiveHttpProvider &&
             spec.Provider.CredentialEnvironmentVariable is not null)
         {
-            throw new CoordinatorValidationException("Only a live OpenAI-compatible provider may bind credentials.");
+            throw new CoordinatorValidationException("Only a live HTTP provider may bind credentials.");
         }
-        if (spec.Provider.Protocol != "replay" && spec.Provider.ReplaySha256 is not null)
+        if (spec.Provider.Protocol != LlmProviderProtocols.Replay && spec.Provider.ReplaySha256 is not null)
         {
             throw new CoordinatorValidationException("Only replay providers may carry a replay-file binding.");
+        }
+        if (spec.Provider.Protocol == LlmProviderProtocols.ExternalAdapter &&
+            (spec.Provider.Endpoint is not null ||
+             spec.Provider.CredentialEnvironmentVariable is not null ||
+             spec.Provider.ReplaySha256 is not null))
+        {
+            throw new CoordinatorValidationException(
+                "An external in-process provider adapter cannot put endpoints, credentials, or replay bindings in the run specification.");
         }
 
         if (!IsSupportedProfile(spec))
@@ -159,9 +168,17 @@ public static class CoordinatorValidation
             spec.PolicyVersion == CoordinatorVersions.Policy &&
             spec.WorkflowVersion == CoordinatorVersions.Workflow,
         CoordinatorRunPurpose.StrategyAuthoring =>
-            spec.PolicyVersion == CoordinatorVersions.StrategyPolicy &&
-            spec.WorkflowVersion == CoordinatorVersions.StrategyWorkflow &&
-            spec.Provider.Protocol is "mock" or "openai-compatible",
+            (spec.PolicyVersion == CoordinatorVersions.StrategyPolicy &&
+             spec.WorkflowVersion == CoordinatorVersions.StrategyWorkflow &&
+             spec.Provider.Protocol is LlmProviderProtocols.Mock or LlmProviderProtocols.OpenAiCompatible) ||
+            (spec.PolicyVersion == CoordinatorVersions.FreeStrategyPolicy &&
+             spec.WorkflowVersion == CoordinatorVersions.FreeStrategyWorkflow &&
+             spec.Provider.Protocol is
+                  LlmProviderProtocols.Mock or
+                  LlmProviderProtocols.OpenAiCompatible or
+                  LlmProviderProtocols.AnthropicMessages or
+                  LlmProviderProtocols.GoogleGemini or
+                  LlmProviderProtocols.ExternalAdapter),
         _ => false
     };
 
@@ -381,4 +398,9 @@ public static class CoordinatorValidation
         value is { Length: <= 128 } &&
         value.StartsWith("DAXALGO_LLM_", StringComparison.Ordinal) &&
         value.All(character => char.IsAsciiLetterOrDigit(character) || character == '_');
+
+    private static bool IsLiveHttpProvider(string protocol) => protocol is
+        LlmProviderProtocols.OpenAiCompatible or
+        LlmProviderProtocols.AnthropicMessages or
+        LlmProviderProtocols.GoogleGemini;
 }

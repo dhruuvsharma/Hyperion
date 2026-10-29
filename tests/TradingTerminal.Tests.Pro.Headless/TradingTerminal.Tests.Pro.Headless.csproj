@@ -7,9 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\windows\AI\Hyperion.FreeStrategyWorkflow\Hyperion.FreeStrategyWorkflow.csproj" />
     <ProjectReference Include="..\..\src\windows\AI\TradingTerminal.Ai.Coordinator.Client\TradingTerminal.Ai.Coordinator.Client.csproj" />
     <ProjectReference Include="..\..\src\windows\AI\TradingTerminal.Ai.Coordinator\TradingTerminal.Ai.Coordinator.csproj" />
-    <ProjectReference Include="..\..\src\windows\Tools\DaxAlgo.Coordinator.Cli\DaxAlgo.Coordinator.Cli.csproj" />
+    <ProjectReference Include="..\..\src\windows\Tools\Hyperion.Cli\Hyperion.Cli.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,6 +23,9 @@
   <ItemGroup>
     <None Include="..\..\tools\hyperion-model\tests\fixtures\review_receipts\golden.*"
           Link="ReviewReceipts\%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\products\free-strategy-workflow\manifests\workflow.v1.json"
+          Link="FreeStrategyWorkflow\workflow.v1.json"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

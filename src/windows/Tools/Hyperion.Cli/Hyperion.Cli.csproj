@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\AI\Hyperion.FreeStrategyWorkflow\Hyperion.FreeStrategyWorkflow.csproj" />
     <ProjectReference Include="..\..\AI\TradingTerminal.Ai.Coordinator.Client\TradingTerminal.Ai.Coordinator.Client.csproj" />
     <ProjectReference Include="..\..\AI\TradingTerminal.Ai.Coordinator\TradingTerminal.Ai.Coordinator.csproj" />
     <ProjectReference Include="..\..\AI\DaxAlgo.Daxq.Contracts\DaxAlgo.Daxq.Contracts.csproj" />

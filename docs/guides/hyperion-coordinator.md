@@ -164,7 +164,13 @@ The repository now follows the hosted boundary in code:
 - `TradingTerminal.Ai.Coordinator.Client` contains safe DTOs and the bounded HTTP client; it has no SQLite or provider-engine reference.
 - `DaxAlgo.Platform.Api` owns Professional authorization, provider policy, account-scoped runs, integer credits, and asynchronous execution.
 - `TradingTerminal.Ai.Coordinator` is the private server execution engine.
-- `DaxAlgo.Coordinator.Cli` is a hosted-API development client plus offline dataset tooling.
+- `DaxAlgo.Coordinator.Cli` is the `hyperion` entry point: hosted-API and offline dataset commands
+  retain the hosted boundary, while `workflow` uses a separate local config/workspace for the free
+  inert strategy workflow.
+- `Hyperion.FreeStrategyWorkflow` composes the fixed roles, provider boundary, durable store, and
+  hash-bound approvals locally without hosted credits or execution authority. Its process gauntlet
+  verifies exact lineage and authority flags, and its bounded revision contract creates at most two
+  fresh repair runs with fresh approvals; neither path compiles or executes source.
 
 This is still a development foundation, not a customer deployment. Development identity headers, an
 in-process polling worker, and per-run server-side SQLite/filesystem artifacts remain. Production
@@ -191,7 +197,7 @@ hyperion init --config "$demoRoot\coordinator-client.json" `
 When invoking from source, replace `hyperion` with:
 
 ```powershell
-dotnet run --project src/windows/Tools/DaxAlgo.Coordinator.Cli/DaxAlgo.Coordinator.Cli.csproj --
+dotnet run --project src/windows/Tools/Hyperion.Cli/Hyperion.Cli.csproj --
 ```
 
 `init` refuses to overwrite its config and creates example brief, source, and dataset files. Its
@@ -280,8 +286,18 @@ nonce-keyed opaque execution-profile binding. The full internal spec has a separ
 
 The engine supports deterministic mock, strict replay, and an OpenAI-compatible adapter for internal
 tests. SQLite, filesystem artifacts, replay fixtures, and provider adapters are server-side
-development mechanics. The hosted CLI no longer configures them. Never put provider keys, endpoints,
-prices, workspaces, owners, or approval actors in desktop configuration.
+development mechanics for hosted runs. Hosted CLI config never contains provider keys, endpoints,
+prices, workspaces, owners, or approval actors. The separate local free-workflow CLI provides fixed
+profiles for Ollama, OpenAI, OpenRouter, Groq, Mistral, DeepSeek, native Anthropic Messages, and
+native Gemini `generateContent`, plus an explicitly enabled custom OpenAI-compatible route. A remote
+profile binds its official origin, protocol, authentication scheme, declared prices, and dedicated
+credential environment-variable *name*; it never stores the credential value, uses hosted credits,
+or changes hosted policy. Custom origins receive slots containing the canonical origin's full
+SHA-256. Successful responses that echo the configured secret into persisted text or request
+identity are rejected. The OpenAI profile uses the Chat Completions compatibility route and rejects
+o-series models; a native Responses route remains deferred. Remote provider use requires explicit
+data-egress consent, and HTTP redirects, cookies, ambient credentials, and system proxies are
+disabled.
 
 Live development mode also requires a server-owned serving-profile path and exact raw-file SHA-256.
 Hosted-policy v1 authorizes Research only. Hosted-policy v2 additionally requires one closed

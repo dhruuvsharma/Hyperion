@@ -16,7 +16,7 @@ not a development target for Hyperion after this extraction.
 - Implemented: coordinator workflows, durable state, OpenAI-compatible and replay providers,
   dataset/review/release gates, retrieval packs, evaluation and promotion evidence, runtime wrappers,
   detached signing handoffs, hosted API integration, and the isolated C# verifier.
-- Verified in this repository: 541 .NET tests, 494 Python tests (plus five expected Windows
+- Verified in this repository: 553 .NET tests, 494 Python tests (plus five expected Windows
   POSIX/symlink-capability skips), 113 schemas with 2,029 resolved references, all CLI help surfaces, and
   the digest-pinned verifier Docker build.
 - Not yet established: a rights-approved training corpus, production signing custody, a conforming
@@ -26,8 +26,10 @@ not a development target for Hyperion after this extraction.
 
 | Path | Purpose |
 |---|---|
+| `products/` | User-facing homes for HTT, the Hyperion CLI, and the Free Strategy Workflow |
+| `src/windows/AI/Hyperion.FreeStrategyWorkflow` | Local/BYOK provider-neutral inert strategy workflow |
 | `src/windows/AI/TradingTerminal.Ai.Coordinator*` | Coordinator contracts, engine, and strict API client (legacy namespaces retained) |
-| `src/windows/Tools/DaxAlgo.Coordinator.Cli` | The .NET `hyperion` operator CLI |
+| `src/windows/Tools/Hyperion.Cli` | The .NET `hyperion` operator CLI; legacy namespaces retained |
 | `tools/hyperion-model` | Python training, evaluation, review, verifier, promotion, and serving harness |
 | `platform/` | Hosted API, credit authority, worker, verifier worker, and integration tests |
 | `src/windows/AI/DaxAlgo.Daxq.*` | Restricted executable-verification dependency closure |
@@ -62,3 +64,6 @@ engineer handbook for the migration policy, security model, cluster plan, and Ki
 - [Coordinator operator and data guide](docs/guides/hyperion-coordinator.md)
 - [Expert-model research and serving plan](docs/research/hyperion-expert-model.md)
 - [Kimi K3 review and Hyperion adoption notes](docs/research/kimi-k3-adoption-notes.md)
+- [HTT product and research paper](products/htt/README.md)
+- [Hyperion CLI product guide](products/hyperion-cli/README.md)
+- [Free Strategy Workflow](products/free-strategy-workflow/README.md)

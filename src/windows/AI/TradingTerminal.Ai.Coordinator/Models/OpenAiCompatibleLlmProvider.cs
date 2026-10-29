@@ -34,15 +34,22 @@ public sealed class OpenAiCompatibleLlmProvider : ILlmProvider
             throw new ArgumentException("The provider id is required.", nameof(descriptor));
         if (string.IsNullOrWhiteSpace(descriptor.ModelId))
             throw new ArgumentException("The model id is required.", nameof(descriptor));
+        if (!StringComparer.Ordinal.Equals(
+                descriptor.Protocol,
+                LlmProviderProtocols.OpenAiCompatible))
+            throw new ArgumentException(
+                $"The provider descriptor must use the '{LlmProviderProtocols.OpenAiCompatible}' protocol.",
+                nameof(descriptor));
         if (maxResponseBytes <= 0)
             throw new ArgumentOutOfRangeException(nameof(maxResponseBytes), "The response-byte limit must be positive.");
-        if (apiKey?.IndexOfAny(['\r', '\n']) >= 0)
+        if (apiKey is not null &&
+            apiKey.Any(character => char.IsWhiteSpace(character) || char.IsControl(character)))
             throw new ArgumentException("The API key contains invalid characters.", nameof(apiKey));
 
         var endpoint = LlmProviderValidation.ValidateEndpoint(descriptor.Endpoint, nameof(descriptor));
         _http = http;
         _completionEndpoint = LlmProviderValidation.AppendPath(endpoint, "chat/completions");
-        _apiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey.Trim();
+        _apiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey;
         _maxResponseBytes = maxResponseBytes;
         Descriptor = descriptor;
     }
@@ -103,6 +110,15 @@ public sealed class OpenAiCompatibleLlmProvider : ILlmProvider
             var parsed = JsonSerializer.Deserialize<ChatResponse>(payload.Text, WireJson);
             var choice = parsed?.Choices?.FirstOrDefault();
             var text = choice?.Message?.Content;
+            if (ContainsCredential(payload.Text) ||
+                ContainsCredential(parsed?.Id) ||
+                ContainsCredential(text))
+            {
+                return LlmCallResult.Failed(
+                    LlmFailureKinds.InvalidResponse,
+                    "The provider response contained configured credential material.",
+                    responseBytes: observedResponseBytes);
+            }
             if (string.IsNullOrWhiteSpace(text))
             {
                 return LlmCallResult.Failed(
@@ -187,6 +203,9 @@ public sealed class OpenAiCompatibleLlmProvider : ILlmProvider
         "assistant" => "assistant",
         _ => null
     };
+
+    private bool ContainsCredential(string? value) =>
+        _apiKey is not null && value is not null && value.Contains(_apiKey, StringComparison.Ordinal);
 
     private static LlmCallResult FailureFor(HttpStatusCode statusCode) => statusCode switch
     {

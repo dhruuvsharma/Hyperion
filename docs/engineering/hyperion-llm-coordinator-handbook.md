@@ -117,7 +117,8 @@ boundary are recorded in `docs/architecture/source-provenance.md`.
 | `src/windows/AI/TradingTerminal.Ai.Coordinator.Contracts` | .NET 9 | Immutable run, provider, budget, role-output, approval, and artifact contracts |
 | `src/windows/AI/TradingTerminal.Ai.Coordinator` | .NET 9, SQLite | Orchestration, validation, providers, persistence, dataset/retrieval tools |
 | `src/windows/AI/TradingTerminal.Ai.Coordinator.Client` | .NET 9 HTTP/JSON | Strict hosted API client and wire contracts |
-| `src/windows/Tools/DaxAlgo.Coordinator.Cli` | .NET 9 | `hyperion` operator CLI and restricted DAXQ review verifier |
+| `src/windows/AI/Hyperion.FreeStrategyWorkflow` | .NET 9 | Local/BYOK inert strategy workflow and Terminal provider-adapter seam |
+| `src/windows/Tools/Hyperion.Cli` | .NET 9 | `hyperion` operator CLI and restricted DAXQ review verifier |
 | `tools/hyperion-model/vibe_quant_model` | Python 3.11+ | Model-data, training, evaluation, signing, promotion, and serving logic |
 | `tools/hyperion-model/schemas` | JSON Schema 2020-12 | Closed wire contracts for every evidence/authority family |
 | `platform/src/DaxAlgo.Platform.Api` | ASP.NET Core, EF Core | Identity, credits, hosted runs, promotion, readiness, worker orchestration |

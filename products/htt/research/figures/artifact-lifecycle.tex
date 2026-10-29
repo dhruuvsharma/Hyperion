@@ -1,0 +1,26 @@
+\begin{tikzpicture}[node distance=4.8mm and 11mm]
+  \node[httbox] (request) {Bound request};
+  \node[httbox, below=of request] (evidence) {Version-pinned evidence};
+  \node[httbox, below=of evidence] (generate) {Grammar-constrained candidates};
+  \node[gatebox, below=of generate] (schema) {Schema and policy gates};
+  \node[gatebox, below=of schema] (compile) {Compile or render};
+  \node[gatebox, below=of compile] (tests) {Behavioral and hidden tests};
+  \node[warnbox, below=of tests] (select) {Calibrated request-level selection};
+  \node[httbox, below=of select] (artifact) {Inert artifact and evidence receipt};
+  \node[warnbox, below=of artifact] (human) {Human release decision};
+  \node[rejectbox, right=18mm of evidence] (abstain) {Evidence gap:\\abstain};
+  \node[rejectbox, right=18mm of compile] (repair) {Hard failure:\\bounded repair};
+  \node[warnbox, left=18mm of select] (review) {Uncertain:\\human review};
+  \draw[httarrow] (request) -- (evidence);
+  \draw[httarrow] (evidence) -- (generate);
+  \draw[httarrow] (generate) -- (schema);
+  \draw[httarrow] (schema) -- (compile);
+  \draw[httarrow] (compile) -- (tests);
+  \draw[httarrow] (tests) -- (select);
+  \draw[httarrow] (select) -- (artifact);
+  \draw[httarrow] (artifact) -- (human);
+  \draw[rejectarrow] (evidence) -- (abstain);
+  \draw[rejectarrow] (compile) -- (repair);
+  \draw[rejectarrow] (repair.west) to[bend right=35] (generate.east);
+  \draw[warnarrow] (select) -- (review);
+\end{tikzpicture}
